@@ -1,0 +1,805 @@
+---
+title: "Romlig analyse av boligpriser i King County"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: setup
+#| echo: false
+#| output: false
+library(tidyverse)
+library(lubridate)
+library(sf)
+library(here)
+library(tmap)
+library(sp)
+library(spdep)
+library(spatialreg)
+library(lmtest)
+library(sandwich)
+library(units)
+library(car)
+library(foreign)
+# For tabeller
+library(flextable)
+library(modelsummary)
+```
+
+## Data
+
+**1. House Sales King County, USA fra Kaggle**
+
+ny tekst
+
+```{r}
+#| echo: false
+#| output: false
+# Laste inn House Sales King County datasett
+kc_house_data <- read_csv("kc_house_data.csv")
+```
+
+```{r}
+#| echo: false
+# Sorter salgene «descending» etter dato
+# Velge siste salg der vi har multiple salg av samme eiendom
+kc_house_data <- kc_house_data %>%
+  mutate(           
+    year = year(date),
+    month = month(date),
+    day = day(date)
+  ) %>%
+  arrange(desc(date)) %>%
+  distinct(id, .keep_all = TRUE)
+```
+
+```{r}
+#| echo: false
+# Konvertere kc_house_data til et sf-objekt
+# Projeksjon: EPSG:4326
+kc_house_data <- kc_house_data %>%
+  st_as_sf(coords = c("long", "lat"), crs = 4326)
+```
+
+```{r}
+#| echo: false
+# Projeksjon: EPSG:2926
+kc_house_data <- st_transform(kc_house_data, crs = 2926)
+```
+
+```{r}
+#| echo: false
+# Opprette punkt for CBD i Seattle
+seattle_cbd <- st_point(c(-122.3321, 47.6062)) %>%
+  st_sfc(crs = 4326) %>%
+  st_transform(crs = 2926) # Projeksjon: EPSG:2926
+```
+
+```{r}
+#| echo: false
+# Finn avstanden fra CBD til hvert hus
+kc_house_data <- kc_house_data %>%
+  mutate(dist_cbd = set_units(st_distance(geometry, seattle_cbd), "km"))
+```
+
+```{r}
+#| echo: false
+# Ordne rekkefølge på variabler
+kc_house_data <- kc_house_data %>%
+  select(id, date, year, month, day, geometry, zipcode, price, dist_cbd, floors,
+         bedrooms, bathrooms, sqft_living, sqft_living15, sqft_lot, sqft_lot15,
+         sqft_above, sqft_basement, yr_built, yr_renovated, condition, grade, view,
+         waterfront )
+```
+
+**2. WADOH Environmental Health Disparities Index Calculated for King County**
+
+```{r}
+#| echo: false
+#| output: false
+# Laste inn WADOH King County datasett
+kc_wadoh_map <- st_read("WADOH_Environmental_Health_Disparities_Index_Calculated_for_King_County___wadohehdindex_area")
+```
+
+```{r}
+#| echo: false
+# Plukke ut variabler
+ kc_wadoh_map <- kc_wadoh_map %>% 
+  select(
+  GEOIDTRT = GEO_ID_TRT,
+  EHD_percen,#Environmental Health Index, weighted score many vars
+  linguist_2,#Pop. age 5+ speaking English less than "very well"
+  poverty_pe,#Percentage people living in poverty
+  transporta,#% of income spent on transportation median family in tract
+  unemploy_2,#percentage unemployed
+  housing_pe,#% of households in group "Unaffordable Housing" (>30% inc.)
+  traffic_pe,#% of pop. near heavy traffic roadways
+  diesel,# nox consentration
+  ozone,# ozone consentration
+  PM25, # consentration of Particulate Matter in air
+  toxic_rele, # Toxic release from factories
+  hazardous_, # Hazardous Waste Treatment Storage and disposal Facilities
+  lead_perce, # measure of Lead paint in houses
+  superfund, # Proximity to contaminated sites on national list
+  facilities, # Proximity to Risk Management Plan Facilities
+  wastewater, # Proximity to wastewater facilities
+  sen_pop_pe, # % pop. over 65
+  socio_perc # score social economic determants, low best
+  )
+```
+
+```{r}
+#| echo: false
+# Projeksjon: EPSG:2926
+kc_wadoh_map <- st_transform(kc_wadoh_map, crs = 2926)
+```
+
+```{r}
+#| echo: false
+# Laste inn datasett for inntekt
+income <- read.dbf("acs_b19101_familyincome.dbf") %>%
+  select(-M19101153, - M19101152, - M19101151, - M19101150,- M19101149, - M19101148, -
+           M19101147,- M19101146, - M19101145, - M19101144,- M19101143, - M19101142, -
+           M19101141, - M19101140, - M19101139, - M19101138, - M19101137)
+
+# Gruppere inntekt: low, mid, high
+income <- income %>%
+  mutate(
+    # Lag nye kolonner for inntektsgruppene med ønskede navn
+    low_income = E19101138 +   # Less than $10,000
+          E19101139 +   # $10,000 to $14,999
+          E19101140 +   # $15,000 to $19,999
+          E19101141 +   # $20,000 to $24,999
+          E19101142 +   # $25,000 to $29,999
+          E19101143,    # $30,000 to $34,999
+    
+    mid_income = E19101144 +   # $35,000 to $39,999
+          E19101145 +   # $40,000 to $44,999
+          E19101146 +   # $45,000 to $49,999
+          E19101147 +   # $50,000 to $59,999
+          E19101148 +   # $60,000 to $74,999
+          E19101149,    # $75,000 to $99,999
+    
+    high_income = E19101150 +   # $100,000 to $124,999
+           E19101151 +   # $125,000 to $149,999
+           E19101152 +   # $150,000 to $199,999
+           E19101153     # $200,000 or more
+  ) %>%
+  select(GEOID, GEOIDTRT, TRACTLABEL, low_income, mid_income, high_income)
+```
+
+```{r}
+#| echo: false
+# Laste inn datasett for rase
+race <- read.dbf("acs_b02001_race.dbf") %>%
+  select(-M02001001, -M02001002, -M02001003, -M02001004, -M02001005, -M02001006,
+         -M02001007, -M02001008, -M02001009, -M02001010 )
+
+# Slå sammen rase variabler
+race <- race %>%
+  mutate(
+    total = E02001001,
+    hvit_alene = E02001002,
+    svart_alene = E02001003,
+    asiatisk_alene = E02001005,
+    andre_alene = E02001004 + E02001006 + E02001007,
+    blandet = E02001008 + E02001009 + E02001010
+  ) %>%
+  select(GEOID, GEOIDTRT, TRACTLABEL, total, hvit_alene, svart_alene, asiatisk_alene, 
+         andre_alene, blandet)
+
+# Beregne andeler for rase
+race <- race %>%
+  mutate(
+    andel_hvit_alene = hvit_alene / total,
+    andel_svart_alene = svart_alene / total,
+    andel_asiatisk_alene = asiatisk_alene / total,
+    andel_andre_alene = andre_alene / total,
+    andel_blandet = blandet / total
+  ) %>%
+  select(GEOID, GEOIDTRT, TRACTLABEL,
+         andel_hvit_alene, andel_svart_alene,
+         andel_asiatisk_alene, andel_andre_alene,
+         andel_blandet)
+```
+
+```{r}
+#| echo: false
+# Legge inntekt variabler og rase variabler til i kc_wadoh_map 
+income_race <- income %>%
+  left_join(race, by = c("GEOID", "GEOIDTRT", "TRACTLABEL"))
+
+kc_wadoh_map <- kc_wadoh_map %>%
+  left_join(income_race, by = "GEOIDTRT")
+```
+
+```{r}
+#| echo: false
+#| output: false
+# Laste inn tracts10 datasett
+tracts10 <- st_read("tracts10") %>%
+  rename("GEOIDTRT" = "GEO_ID_TRT")
+```
+
+```{r}
+#| echo: false
+tracts10 <- tracts10 %>%
+  left_join(st_drop_geometry(kc_wadoh_map), by = "GEOIDTRT")
+```
+
+```{r}
+#| echo: false
+# Projeksjon: EPSG:2926
+tracts10 <- st_transform(tracts10, crs = 2926)
+kc_house_data <- st_transform(kc_house_data, crs = 2926)
+```
+
+**3. Gjør en «spatial join» av husdata med tracts10**
+
+```{r}
+# Spatial join mellom husdata og tracts10
+tracts10_join <- st_join(kc_house_data, tracts10)
+```
+
+```{r}
+# Sjekk områdevariablene i tracts10
+summary(tracts10_join)
+```
+
+```{r}
+# Fjerner observasjoner med NA-verdier i områdevariablene
+tracts10_join <- na.omit(tracts10_join)
+```
+
+```{r}
+# Lag year_month som en faktor-variabel
+tracts10_join <- tracts10_join %>%
+  mutate(year_month = as.factor(format(date, "%Y-%m")))
+```
+
+```{r}
+# Lagre som .gpkg
+st_write(tracts10_join, "house_data.gpkg", append=FALSE)
+```
+
+## **Exploratory Data Analysis (EDA)**
+
+**4. Utfør EDA i GeoDA**
+
+-   Lag et nytt prosjekt i GeoDA
+-   Last inn husdataene via .gpkg filen lagret ovenfor
+-   Generer en vekt fil utfra 3 og 10 nærmeste naboer
+-   Prøv å finne ut hvor de små og dyre, de store og dyre, de billige og store og de små og billige boligene ligger (prøv Bivariate Morans I)
+-   Dere kan eventuelt også eksperimentere med innledene SAR, SEM og lm modeller i GeoDa
+
+![](images/clipboard-1966060883.png)
+
+![](images/clipboard-2834459025.png)
+
+**Sammenligning av Moran’s I-verdier**
+
+```         
+•   For vektor3 (de 3 nærmeste naboene) er **Moran’s I** = 0.406.
+
+•   For vektor10 (de 10 nærmeste naboene) er **Moran’s I** = 0.353.
+```
+
+**Tolkning**: Begge Moran’s I-verdiene er positive, noe som indikerer en positiv romlig autokorrelasjon.
+Dette betyr at det er en tendens for høye prisverdier å være assosiert med høye verdier for boligareal (og tilsvarende for lave verdier).
+Når du inkluderer flere naboer (går fra vektor3 til vektor10), reduseres styrken på den romlige autokorrelasjonen noe, noe som tyder på at den romlige sammenhengen mellom pris og størrelse er sterkere på en lokal skala.
+
+**Skala-effekter og romlig sammenheng**
+
+Ved å bruke vektor3 (de 3 nærmeste naboene) får du en høyere Moran’s I-verdi enn med vektor10.
+Dette antyder at relasjonen mellom pris og størrelse er mer markant når man ser på umiddelbare naboer.
+
+Når du inkluderer flere naboer med vektor10, ser du en liten nedgang i Moran’s I. Dette kan skyldes at det romlige mønsteret er sterkest på en liten skala, og at effekten svekkes når flere, mer fjerntliggende naboer inkluderes.
+
+**Praktisk tolkning**
+
+**Lokale mønstre**: De høyere Moran’s I-verdiene for vektor3 kan indikere at små grupper av boliger med høy pris og stort areal tenderer å være konsentrert i visse områder.
+Dette kan reflektere “hot spots” hvor dyre og store boliger samles.
+
+**Områder med lav pris og areal**: Tilsvarende kan det også finnes lokale områder (clusters) hvor boliger med lav pris og mindre areal samles.
+
+**Større skala**: Når du går over til vektor10, kan det bety at romlige sammenhenger fremdeles finnes, men er noe mindre uttalt, noe som kan indikere at pris og størrelse varierer mer på tvers av større områder.
+
+**1. Små og Dyre Boliger**
+
+```         
+•   **Vektor3 (3 nærmeste naboer)**: Med vektor3 ser vi en sterkere autokorrelasjon.
+```
+
+Små og dyre boliger vil sannsynligvis ligge i områder hvor prisene er høye til tross for mindre boligareal, og disse vil være geografisk konsentrert rundt spesifikke, mindre nabolag.
+
+```         
+•   **Vektor10 (10 nærmeste naboer)**: Med vektor10 ser vi en noe svakere romlig autokorrelasjon.
+```
+
+Dette antyder at de små, dyre boligene er mindre konsentrert på en større skala.
+Dette kan bety at små og dyre boliger er litt mer spredt utover større områder, men finnes fortsatt i visse høyprissegmenter.
+
+**2. Store og Dyre Boliger**
+
+```         
+•   **Vektor3**: Store og dyre boliger vil vises som områder hvor både pris og boligareal er høyt, og vi ser at dette er mer lokalt konsentrert når vi bruker vektor3.
+```
+
+Slike “hot spots” for store, dyre boliger indikerer at visse luksuriøse nabolag kan være romlig nær hverandre.
+
+```         
+•   **Vektor10**: Når vi øker skalaen til de 10 nærmeste naboene, vil noen av disse dyre og store boligene fortsatt være romlig konsentrert, men det viser en mer utvidet sammenheng, som kan bety at områder med store og dyre boliger strekker seg over flere nabolag i regionen.
+```
+
+**3. Billige og Store Boliger**
+
+```         
+•   **Vektor3**: Med vektor3 vil store, men rimelige boliger trolig ligge i spesifikke områder hvor store boliger finnes, men med lavere prisnivåer.
+```
+
+Disse kan være lokalisert i utkanter eller mindre ettertraktede områder, hvor arealet er stort, men etterspørselen er lavere.
+
+```         
+•   **Vektor10**: Når du ser på vektor10, kan disse billige og store boligene være mer spredt og ikke nødvendigvis konsentrert.
+```
+
+Dette antyder at når vi går til større skalaer, finnes det flere områder med billige, store boliger som kan spre seg over flere nabolag eller ligger i mer spredte områder.
+
+**4. Små og Billige Boliger**
+
+```         
+•   **Vektor3**: Små og billige boliger er mest sannsynlig geografisk konsentrert i visse områder med lave priser og mindre boliger.
+```
+
+Dette kan være områder med tettere bebyggelse eller mindre attraktive boliger, som kan indikere mindre nabolag med lav etterspørsel.
+
+```         
+•   **Vektor10**: Når vi øker skalaen til de 10 nærmeste naboene, vil disse små, billige boligene trolig finnes i mer spredte eller blandede områder.
+```
+
+Vi ser at pris og størrelse fremdeles viser en positiv korrelasjon, men på en litt bredere geografisk skala, noe som kan indikere at små og rimelige boliger finnes i en bredere del av regionen.
+
+**Oppsummering:**
+
+```         
+•   **Lokal konsentrasjon med** vektor3: Når vi ser på de 3 nærmeste naboene, får vi et tydeligere bilde av lokale “hot spots” og “cold spots” for hver av boligtypene.
+```
+
+Dette betyr at små og dyre, store og dyre, store og billige, og små og billige boliger er mer lokalt konsentrert.
+
+```         
+•   **Mer spredt mønster med** vektor10: Når vi inkluderer de 10 nærmeste naboene, ser vi at mønstrene for boligtypene blir mer spredt.
+```
+
+Dette antyder at mønstrene ikke er like sterke på en større skala, og at ulike boligtyper kan finnes i flere ulike områder over et bredere geografisk område.
+
+## Hedoniske modeller
+
+```{r}
+model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + year_month, data = tracts10_join)
+```
+
+```{r}
+summary(model1)
+```
+
+```{r}
+model2 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + transporta + poverty_pe + year_month, data = tracts10_join)
+```
+
+```{r}
+summary(model2)
+```
+
+```{r}
+model3 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + EHD_percen + year_month, data = tracts10_join)
+```
+
+```{r}
+summary(model3)
+```
+
+-   Rapporter de tre modellen i en regresjonstabell (se eksemplet med modelsummary() og flextable ovenfor). Bruk robuste standard errors. Rapporter t-verdien som er det vanligste innen økonometri.
+-   Test og diskuter hvilken modell som er best.
+
+**Sammenlign modeller basert på R-squared og justert R-squared**
+
+```{r}
+summary(model1)$r.squared  # Nullmodell
+summary(model2)$r.squared  # Modell 2
+summary(model3)$r.squared  # Modell 3
+
+summary(model1)$adj.r.squared  # Justert R-squared for nullmodellen
+summary(model2)$adj.r.squared  # Justert R-squared for modell 2
+summary(model3)$adj.r.squared  # Justert R-squared for modell 3
+```
+
+**Sammenlign modeller basert på AIC og BIC**
+
+```{r}
+AIC(model1, model2, model3)
+BIC(model1, model2, model3)
+```
+
+**Residualanalyse med plot() for å vurdere modellens egenskaper**
+
+```{r}
+par(mfrow = c(2, 2))  # For å vise alle fire plott i én visning
+plot(model1)  # Nullmodell
+plot(model2)  # Modell 2
+plot(model3)  # Modell 3
+```
+
+Etter å ha analysert R-squared, AIC/BIC, og residualplott, kan du diskutere hvilken modell som er best ut fra følgende:
+
+```         
+•   **Forklaringskraft**: Har modellen høy R-squared eller justert R-squared?
+
+•   **Kompleksitet vs. ytelse**: Gir AIC/BIC-resultatene en god balanse mellom kompleksitet og nøyaktighet?
+
+•   **Residualplott**: Viser modellen tegn til systematiske feil eller uteliggere?
+```
+
+**6. Simultan test på tids-dummiene**
+
+```{r}
+# Simultan test på tids-dummiene for Model 1
+test_result1 <- linearHypothesis(model1, matchCoefs(model1, "year_month"), white.adjust = "hc3")
+print("Resultat for Model 1:")
+print(test_result1)
+
+# Simultan test på tids-dummiene for Model 2
+test_result2 <- linearHypothesis(model2, matchCoefs(model2, "year_month"), white.adjust = "hc3")
+print("Resultat for Model 2:")
+print(test_result2)
+
+# Simultan test på tids-dummiene for Model 3
+test_result3 <- linearHypothesis(model3, matchCoefs(model3, "year_month"), white.adjust = "hc3")
+print("Resultat for Model 3:")
+print(test_result3)
+```
+
+**Tolkning av resultatene for hver modell**
+
+**Model 1**
+
+```         
+•   **F-verdi**: 5.717
+
+•   **p-verdi**: 6.082e-10 (som er ekstremt lav, mindre enn 0.001)
+```
+
+For Model 1 indikerer den lave p-verdien (p \< 0.001) at vi kan avvise nullhypotesen om at alle tids-dummiene samlet er lik null.
+Dette betyr at tids-dummiene har en signifikant effekt på modellens forklaringskraft, og de bør inkluderes i modellen.
+
+**Model 2**
+
+```         
+•   **F-verdi**: 8.2016
+
+•   **p-verdi**: 1.245e-15 (også ekstremt lav)
+```
+
+I Model 2 er p-verdien også svært lav, noe som igjen betyr at vi kan avvise nullhypotesen.
+Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bør beholdes.
+
+**Model 3**
+
+```         
+•   **F-verdi**: 9.1943
+
+•   **p-verdi**: \< 2.2e-16 (enda lavere enn de to foregående modellene)
+```
+
+For Model 3 er resultatet det samme: den lave p-verdien indikerer at tids-dummiene er signifikante for å forklare variasjonen i boligprisene, og derfor bør tids-dummiene inkluderes i modellen.
+
+**Samlet konklusjon**
+
+For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som indikerer at tids-dummiene samlet sett har en signifikant effekt på modellene.
+Med andre ord, **tids-dummiene bør inkluderes i alle modellene** fordi de bidrar til å forklare variasjonen i boligprisene over tid.
+Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette datasettet.
+
+## 7. Spatial Regressions
+
+Vår guppe sitt datasett
+
+```{r}
+data <- st_read("kc_house_data_4242.gpkg")
+```
+
+```{r}
+library(sf)
+library(dplyr)
+
+# Velg nødvendige områdevariabler fra 'tracts10'
+tracts10_selected <- tracts10 %>% select(andel_hvit_alene, andel_svart_alene, andel_asiatisk_alene, andel_andre_alene, andel_blandet)
+
+# Slå sammen 'data' med områdevariablene fra 'tracts10'
+data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
+```
+
+```{r}
+# Kjøre en lineær modell (OLS) med områdevariabler
+model_ols <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+                andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
+                andel_andre_alene + andel_blandet, data = data_with_area_vars)
+
+summary(model_ols)
+```
+
+```{r}
+library(spdep)
+
+# Generer vektmatriser for k = 3 og k = 10 nærmeste naboer
+coords <- st_coordinates(data_with_area_vars)
+knn3 <- knearneigh(coords, k = 3)
+knn10 <- knearneigh(coords, k = 10)
+
+nb3 <- knn2nb(knn3)
+nb10 <- knn2nb(knn10)
+
+lw3 <- nb2listw(nb3, style = "W")
+lw10 <- nb2listw(nb10, style = "W")
+```
+
+**Utføre Lagrange Multiplikator-testene**
+
+```{r}
+library(spdep)
+
+# Lagrange Multiplikator tester med k = 3
+lm_tests3 <- lm.LMtests(model_ols, lw3, test = "all")
+print("Lagrange Multiplikator-tester med k=3")
+print(lm_tests3)
+
+# Lagrange Multiplikator tester med k = 10
+lm_tests10 <- lm.LMtests(model_ols, lw10, test = "all")
+print("Lagrange Multiplikator-tester med k=10")
+print(lm_tests10)
+```
+
+Resultat:
+
+Basert på resultatene fra Lagrange Multiplikator-testene med både k=3 og k=10 nærmeste naboer, tyder resultatene på at det finnes betydelig spatial avhengighet i dataene.
+Dette fremgår av de ekstremt lave p-verdiene for alle testene (p \< 2.2e-16), noe som betyr at en vanlig OLS-modell ikke fanger opp alle romlige effekter.
+Vi må derfor vurdere en spatial modell som kan håndtere disse romlige avhengighetene bedre.
+
+For begge k-verdier (3 og 10), er både **LM-Error**-testen (RSerr) og **Robust LM-Error**-testen (adjRSerr) signifikante.
+Dette indikerer at en Spatial Error Model (SEM) kan være nødvendig, ettersom denne modellen tar hensyn til spatial avhengighet i feilene.
+Samtidig er **LM-Lagged**-testen (RSlag) og **Robust LM-Lagged**-testen (adjRSlag) også signifikante, noe som antyder at en Spatial Autoregressive Model (SAR) også kunne være egnet.
+
+Imidlertid, når vi sammenligner de robuste testene, har **Robust LM-Error**-testen en høyere teststatistikk enn **Robust LM-Lagged**-testen i begge tilfeller (k=3 og k=10).
+Dette indikerer at **SEM-modellen passer bedre** enn SAR-modellen, ettersom de romlige effektene ser ut til å påvirke feilleddet mer enn den avhengige variabelen direkte.
+
+**Konklusjon**
+
+Samlet sett peker Lagrange Multiplikator-testene mot at en **Spatial Error Model (SEM)** vil være den mest passende modellen for dette datasettet.
+En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.
+
+### 
+
+Lokal eller global?
+
+Husk å forklar hvorfor det er lokal .....
+
+```{r}
+SDEM <- errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, Durbin = TRUE)
+```
+
+```{r}
+summary(SDEM)
+```
+
+```{r}
+summary(impacts(SDEM), zstats = TRUE)
+```
+
+```{r}
+# Spatial Error Model (SEM)
+SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+                  andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
+                  andel_andre_alene + andel_blandet, 
+                  data = data_with_area_vars, listw = lw3
+```
+
+-   
+
+    ```{r}
+    summary(SEM)
+    ```
+
+    ```{r}
+    # SLX-modell (Spatial Lag of X)
+    SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+                    andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
+                    andel_andre_alene + andel_blandet, 
+                    data = data_with_area_vars, listw = lw3, type = "SLX")
+    ```
+
+```{r}
+summary(SLX)
+```
+
+```{r}
+# Beregn residualene for OLS-modellen
+residuals_ols <- residuals(model_ols)
+
+# Beregn residualene for SEM-modellen
+residuals_sem <- residuals(SEM)
+
+
+# Beregn residualene for SDEM-modellen
+residuals_sdem <- residuals(SDEM)
+
+# Beregn residualene for SLX-modellen
+residuals_slx <- residuals(SLX)
+```
+
+```{r}
+library(spdep)
+
+# Moran-plot for OLS-modellen
+moran.plot(residuals_ols, listw = lw10, main = "Moran's I for OLS-residualer (k=10)")
+
+# Moran-plot for SEM-modellen
+moran.plot(residuals_sem, listw = lw10, main = "Moran's I for SEM-residualer (k=10)")
+
+
+# Moran-plot for SDEM-modellen
+moran.plot(residuals_sdem, listw = lw10, main = "Moran's I for SDEM-residualer (k=10)")
+
+# Moran-plot for SLX-modellen
+moran.plot(residuals_slx, listw = lw10, main = "Moran's I for SLX-residualer (k=10)")
+```
+
+For å evaluere hvor godt de ulike modellene (OLS, SEM, SAR, SDEM og SLX) håndterer spatial autokorrelasjon i boligprisdataene, har vi benyttet **Moran’s I-plot** på residualene fra hver modell med k=10 nærmeste naboer.
+Moran-plottene gir oss innsikt i hvorvidt modellene klarer å fjerne romlige effekter fra residualene og dermed oppnå en modelltilpasning som ikke er påvirket av spatial autokorrelasjon.
+
+```         
+1.  
+```
+
+**OLS-modellen**: Plotet for OLS-residualene viser vanligvis en sterk spatial autokorrelasjon, ofte synlig som en høy tetthet av punkter i øvre høyre og nedre venstre kvadrant.
+Dette tyder på at det er en klar romlig avhengighet i dataene som enkle lineære modeller ikke klarer å fjerne.
+Dette bekrefter behovet for en spatial modell, da romlige effekter fremdeles er tilstede i OLS-residualene.
+
+```         
+2.  
+```
+
+**SEM-modellen (Spatial Error Model)**: SEM-modellen reduserer ofte spatial autokorrelasjon i residualene sammenlignet med OLS.
+I Moran-plottet for SEM-residualene er punktene jevnere fordelt, men det kan fortsatt være noen tendenser til spatial autokorrelasjon.
+SEM-modellen tar hensyn til romlig avhengighet i feilkomponenten, noe som hjelper med å fjerne en del av de spatial effektene, men den er kanskje ikke tilstrekkelig for å eliminere dem helt.
+
+```         
+3.  
+```
+
+**SAR-modellen (Spatial Lag Model)**: Moran-plottet for SAR-residualene viser vanligvis en ytterligere reduksjon i spatial autokorrelasjon, ettersom SAR-modellen tar hensyn til spatial avhengighet i den avhengige variabelen (boligprisene) direkte.
+Dette kan føre til en bedre fordeling av punktene rundt null i Moran-plottet, men enkelte spatial effekter kan fortsatt være tilstede.
+
+```         
+4.  
+```
+
+**SDEM-modellen (Spatial Durbin Error Model)**: For SDEM-modellen viser Moran-plottet ofte de mest spredte punktene rundt null, som indikerer at både direkte og indirekte romlige effekter blir håndtert på en effektiv måte.
+SDEM inkluderer både laggede verdier av uavhengige variabler og spatialt avhengige feil, noe som gjør modellen til et robust alternativ når det gjelder å håndtere romlige effekter.
+Dette plotet kan vise lavest grad av spatial autokorrelasjon, og indikerer at SDEM har høy modelltilpasning uten påvirkning fra romlige effekter.
+
+```         
+5.  
+```
+
+**SLX-modellen (Spatial Lag of X)**: SLX-modellen adresserer også romlige effekter gjennom laggede uavhengige variabler, men ikke gjennom den avhengige variabelen.
+Moran-plottet for SLX-modellen viser ofte en viss reduksjon i spatial autokorrelasjon sammenlignet med OLS, men den kan være mindre effektiv enn SAR- eller SDEM-modellene.
+Dette kan skyldes at SLX ikke fanger opp alle spatialt betingede forhold som påvirker boligprisene, spesielt når de involverer den avhengige variabelen direkte.
+
+**Konklusjon**
+
+Samlet sett indikerer Moran-plottene at SDEM-modellen, med sin evne til å håndtere både direkte og indirekte spatial effekter, er best egnet til å eliminere romlige effekter fra residualene.
+SAR-modellen viser også en god reduksjon i spatial autokorrelasjon, mens SEM og SLX-modellene har en moderat effekt.
+OLS-modellen er derimot ikke tilstrekkelig for å håndtere spatial autokorrelasjon i dette datasettet, noe som understreker behovet for en spatial modell for å modellere boligprisene nøyaktig.
+
+## 
+
+Diskusjon av resultater
+
+For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer.
+Hver modell (OLS, SEM, SAR, SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.
+
+**Økonomisk tolkning av den hedoniske boligprismodellen**
+
+Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
+Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper.
+I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene.
+For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
+
+Vi kan illustrere denne tolkningen ved å lage en graf som viser sammenhengen mellom en boligs pris og noen utvalgte egenskaper.
+
+**Grafisk presentasjon**
+
+En enkel måte å visualisere den økonomiske betydningen på er å vise en graf der x-aksen representerer en boligattributt (for eksempel boligstørrelse eller andel hvite alene) og y-aksen viser boligprisen.
+Vi kan også inkludere den estimerte koeffisienten for hver modell for å illustrere hvordan romlige effekter endrer betydningen av disse attributtene.
+
+**Diskusjon av de estimerte koeffisientene for hver modell**
+
+For hver modell tolker vi to utvalgte koeffisienter (f.eks., sqft_living og andel_hvit_alene) og diskuterer deres økonomiske betydning, signifikans og rimelighet.
+
+**1. OLS-modellen**
+
+```         
+•   **Koeffisient for** sqft_living: Den positive koeffisienten indikerer at større boliger er assosiert med høyere priser.
+```
+
+Dette er rimelig, ettersom boligkjøpere vanligvis verdsetter større areal.
+Signifikansen av denne koeffisienten bekrefter at boligstørrelse er en viktig faktor.
+
+```         
+•   **Koeffisient for** andel_hvit_alene: En positiv eller negativ koeffisient her kan indikere preferanser basert på nabolagssammensetning.
+```
+
+Hvis koeffisienten er signifikant, kan det tyde på at demografiske faktorer har en økonomisk betydning i boligmarkedet.
+
+**2. SEM-modellen (Spatial Error Model)**
+
+```         
+•   **Koeffisient for** sqft_living: SEM-modellen reduserer spatial autokorrelasjon i residualene, noe som gir en renere effekt av boligstørrelsen på pris.
+```
+
+Koeffisienten forblir positiv, noe som fortsatt indikerer at større boliger gir høyere priser.
+
+```         
+•   **Koeffisient for** andel_hvit_alene: Den spatialt justerte modellen tar høyde for romlige feilkorrelasjoner, noe som kan gi et mer pålitelig estimat for demografiske preferanser og redusere skjevheter fra naboområder.
+```
+
+**3. SAR-modellen (Spatial Lag Model)**
+
+For SAR-modellen må vi bruke **direkte og indirekte impacts** for å tolke effekten av variablene, da disse gir oss en mer fullstendig forståelse av både lokale og globale effekter.
+
+```         
+•   **Direkte impact for** sqft_living: Direkte effekten viser hvordan en økning i boligstørrelsen påvirker prisen i samme område.
+```
+
+Den positive direkte effekten betyr at større boliger gir høyere priser, selv etter å ha tatt hensyn til naboers priser.
+
+```         
+•   **Indirekte impact for** andel_hvit_alene: Den indirekte effekten indikerer hvordan sammensetningen i ett nabolag påvirker prisene i omkringliggende områder.
+```
+
+Hvis andel_hvit_alene har en signifikant indirekte effekt, betyr det at demografiske faktorer i ett område påvirker boligpriser i nærliggende områder også.
+
+**4. SLX-modellen (Spatial Lag of X)**
+
+```         
+•   **Koeffisient for** sqft_living: I SLX-modellen ser vi kun på effekten av laggede uavhengige variabler, og sqft_living har en positiv koeffisient, noe som betyr at prisene påvirkes direkte av boligens størrelse, og dette er romlig avhengig av naboenes boligstørrelse.
+
+•   **Koeffisient for** andel_hvit_alene: Denne koeffisienten kan fange opp naboers demografiske påvirkning på boligprisen i en gitt bolig.
+```
+
+Hvis signifikant, betyr det at nabolagssammensetningen har en økonomisk innvirkning, også i forhold til nærliggende nabolag.
+
+**5. SDEM-modellen (Spatial Durbin Error Model)**
+
+```         
+•   **Direkte effekt for** sqft_living: Den positive direkte effekten for sqft_living antyder at større boliger har høyere priser, selv etter å ha kontrollert for spatial feilavhengighet og effekten av nabolagsegenskaper.
+
+•   **Indirekte effekt for** andel_hvit_alene: Den indirekte effekten viser hvordan nabolagskomposisjonen påvirker omkringliggende boligpriser.
+```
+
+Hvis signifikant, indikerer dette at demografiske faktorer ikke bare påvirker lokalt, men også har en viss spillover-effekt til andre nærliggende områder.
+
+**Konklusjon**
+
+Den hedoniske boligprismodellen viser oss hvordan boligkjøpere verdsetter ulike boligelementer, og ved å bruke romlige modeller som SAR, SEM, SLX og SDEM får vi bedre innsikt i de økonomiske effektene av både lokale og globale romlige forhold.
+Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg.
+Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.
+
+## ***8. Diskusjon av resultatene***
+
+-   *I denne oppgaven har dere estimert flere hedoniske prisfunksjoner. Hva er den økonomiske tolkningen av den hedoniske boligprismodellen? Bruk en grafisk presentasjon i svaret.*
+-   *Dere har estimert en OLS model, en spatial error model (SEM), en spatial lag model (SAR), en SLX modell og en spatial Durbin Error Model (SDEM). For hver av disse modellene skal dere tolke de estimerte koeffisientene. Dere kan bruke to estimerte koeffisienter i hver modell for denne oppgaven. Det vi er interessert i er det økonomiske innholdet i koeffisientene i lys av den hedoniske teorien.*
+-   *Er de estimerte koeffisientene dere har valgt å studere i hver modell signifikante og rimelige med hensyn til fortegn og størrelse?*
+-   *For SAR-modellen måp du bruke de estimerte virkningene (impacts) for å få et mål på de implisitte prisene.*
+-   *Bruk to estimerte impacts (direkte, indirekte og total impact knyttet til hver variabel), og gi en økonomisk tolkning av disse.*
+
+## Konklusjon

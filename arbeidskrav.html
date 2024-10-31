@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.555">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Romlig analyse av boligpriser i King County</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="arbeidskrav_files/libs/clipboard/clipboard.min.js"></script>
+<script src="arbeidskrav_files/libs/quarto-html/quarto.js"></script>
+<script src="arbeidskrav_files/libs/quarto-html/popper.min.js"></script>
+<script src="arbeidskrav_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="arbeidskrav_files/libs/quarto-html/anchor.min.js"></script>
+<link href="arbeidskrav_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="arbeidskrav_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="arbeidskrav_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="arbeidskrav_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="arbeidskrav_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Romlig analyse av boligpriser i King County</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p><strong>1. House Sales King County, USA fra Kaggle</strong></p>
+<p><strong>2. WADOH Environmental Health Disparities Index Calculated for King County</strong></p>
+<p><strong>3. Gjør en «spatial join» av husdata med tracts10</strong></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Spatial join mellom husdata og tracts10</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tracts10_join <span class="ot">&lt;-</span> <span class="fu">st_join</span>(kc_house_data, tracts10)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sjekk områdevariablene i tracts10</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tracts10_join)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      id                 date                             year     
+ Length:21436       Min.   :2014-05-02 00:00:00.00   Min.   :2014  
+ Class :character   1st Qu.:2014-07-22 00:00:00.00   1st Qu.:2014  
+ Mode  :character   Median :2014-10-17 00:00:00.00   Median :2014  
+                    Mean   :2014-10-29 17:30:02.34   Mean   :2014  
+                    3rd Qu.:2015-02-18 00:00:00.00   3rd Qu.:2015  
+                    Max.   :2015-05-27 00:00:00.00   Max.   :2015  
+                                                                   
+     month             day                 geometry        zipcode     
+ Min.   : 1.000   Min.   : 1.00   POINT        :21436   Min.   :98001  
+ 1st Qu.: 4.000   1st Qu.: 8.00   epsg:2926    :    0   1st Qu.:98033  
+ Median : 6.000   Median :16.00   +proj=lcc ...:    0   Median :98065  
+ Mean   : 6.564   Mean   :15.69                         Mean   :98078  
+ 3rd Qu.: 9.000   3rd Qu.:23.00                         3rd Qu.:98117  
+ Max.   :12.000   Max.   :31.00                         Max.   :98199  
+                                                                       
+     price            dist_cbd.V1         floors         bedrooms     
+ Min.   :  75000   Min.   : 0.98600   Min.   :1.000   Min.   : 0.000  
+ 1st Qu.: 324866   1st Qu.: 9.78459   1st Qu.:1.000   1st Qu.: 3.000  
+ Median : 450000   Median :16.54715   Median :1.500   Median : 3.000  
+ Mean   : 541650   Mean   :18.48321   Mean   :1.496   Mean   : 3.372  
+ 3rd Qu.: 645000   3rd Qu.:25.32035   3rd Qu.:2.000   3rd Qu.: 4.000  
+ Max.   :7700000   Max.   :77.31409   Max.   :3.500   Max.   :33.000  
+                                                                      
+   bathrooms      sqft_living    sqft_living15     sqft_lot      
+ Min.   :0.000   Min.   :  290   Min.   : 399   Min.   :    520  
+ 1st Qu.:1.750   1st Qu.: 1430   1st Qu.:1490   1st Qu.:   5040  
+ Median :2.250   Median : 1920   Median :1840   Median :   7614  
+ Mean   :2.117   Mean   : 2083   Mean   :1988   Mean   :  15136  
+ 3rd Qu.:2.500   3rd Qu.: 2550   3rd Qu.:2370   3rd Qu.:  10696  
+ Max.   :8.000   Max.   :13540   Max.   :6210   Max.   :1651359  
+                                                                 
+   sqft_lot15       sqft_above   sqft_basement       yr_built   
+ Min.   :   651   Min.   : 290   Min.   :   0.0   Min.   :1900  
+ 1st Qu.:  5100   1st Qu.:1200   1st Qu.:   0.0   1st Qu.:1952  
+ Median :  7620   Median :1560   Median :   0.0   Median :1975  
+ Mean   : 12786   Mean   :1791   Mean   : 291.7   Mean   :1971  
+ 3rd Qu.: 10087   3rd Qu.:2220   3rd Qu.: 560.0   3rd Qu.:1997  
+ Max.   :871200   Max.   :9410   Max.   :4820.0   Max.   :2015  
+                                                                
+  yr_renovated       condition        grade             view       
+ Min.   :   0.00   Min.   :1.00   Min.   : 1.000   Min.   :0.0000  
+ 1st Qu.:   0.00   1st Qu.:3.00   1st Qu.: 7.000   1st Qu.:0.0000  
+ Median :   0.00   Median :3.00   Median : 7.000   Median :0.0000  
+ Mean   :  84.73   Mean   :3.41   Mean   : 7.662   Mean   :0.2351  
+ 3rd Qu.:   0.00   3rd Qu.:4.00   3rd Qu.: 8.000   3rd Qu.:0.0000  
+ Max.   :2015.00   Max.   :5.00   Max.   :13.000   Max.   :4.0000  
+                                                                   
+   waterfront         GEOIDTRT           FEATURE_ID     TRACT_LBL        
+ Min.   :0.000000   Length:21436       Min.   :10153   Length:21436      
+ 1st Qu.:0.000000   Class :character   1st Qu.:34396   Class :character  
+ Median :0.000000   Mode  :character   Median :44673   Mode  :character  
+ Mean   :0.007604                      Mean   :38114                     
+ 3rd Qu.:0.000000                      3rd Qu.:45279                     
+ Max.   :1.000000                      Max.   :45837                     
+                                       NA's   :1                         
+  TRACT_STR           TRACT_INT       TRACT_FLT      TRACT_DEL        
+ Length:21436       Min.   :  100   Min.   :  1.0   Length:21436      
+ Class :character   1st Qu.:10402   1st Qu.:104.0   Class :character  
+ Mode  :character   Median :24702   Median :247.0   Mode  :character  
+                    Mean   :21222   Mean   :212.2                     
+                    3rd Qu.:31202   3rd Qu.:312.0                     
+                    Max.   :32800   Max.   :328.0                     
+                    NA's   :1       NA's   :1                         
+  TRTLABEL_F         TRTLABEL_C         TRTLABEL_T         COUNTY_STR       
+ Length:21436       Length:21436       Length:21436       Length:21436      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+   COUNTY_INT  STATE_STR           STATE_INT    LEVEL_1         
+ Min.   :33   Length:21436       Min.   :53   Length:21436      
+ 1st Qu.:33   Class :character   1st Qu.:53   Class :character  
+ Median :33   Mode  :character   Median :53   Mode  :character  
+ Mean   :33                      Mean   :53                     
+ 3rd Qu.:33                      3rd Qu.:53                     
+ Max.   :33                      Max.   :53                     
+ NA's   :1                       NA's   :1                      
+   LEVEL_2            LEVEL_3            TRACT_AREA          TRACT_PERI    
+ Length:21436       Length:21436       Min.   :2.792e+06   Min.   :  8012  
+ Class :character   Class :character   1st Qu.:2.485e+07   1st Qu.: 23500  
+ Mode  :character   Mode  :character   Median :4.124e+07   Median : 32920  
+                                       Mean   :1.808e+08   Mean   : 48215  
+                                       3rd Qu.:7.308e+07   3rd Qu.: 47962  
+                                       Max.   :1.526e+10   Max.   :738820  
+                                       NA's   :1           NA's   :1       
+   LOGRECNO           Shape_area          Shape_len        EHD_percen    
+ Length:21436       Min.   :2.792e+06   Min.   :  8012   Min.   :  1.00  
+ Class :character   1st Qu.:2.485e+07   1st Qu.: 23500   1st Qu.: 19.00  
+ Mode  :character   Median :4.124e+07   Median : 32920   Median : 41.00  
+                    Mean   :1.808e+08   Mean   : 48215   Mean   : 43.63  
+                    3rd Qu.:7.308e+07   3rd Qu.: 47962   3rd Qu.: 67.00  
+                    Max.   :1.526e+10   Max.   :738820   Max.   :100.00  
+                    NA's   :1           NA's   :1        NA's   :1       
+   linguist_2       poverty_pe      transporta      unemploy_2    
+ Min.   : 0.450   Min.   : 1.97   Min.   :12.00   Min.   : 1.000  
+ 1st Qu.: 3.120   1st Qu.: 8.93   1st Qu.:18.00   1st Qu.: 3.230  
+ Median : 7.000   Median :13.60   Median :20.00   Median : 4.310  
+ Mean   : 9.004   Mean   :16.65   Mean   :19.77   Mean   : 4.774  
+ 3rd Qu.:12.730   3rd Qu.:22.95   3rd Qu.:21.00   3rd Qu.: 6.050  
+ Max.   :40.350   Max.   :75.48   Max.   :26.00   Max.   :13.620  
+ NA's   :196      NA's   :1       NA's   :1       NA's   :78      
+   housing_pe      traffic_pe        diesel          ozone      
+ Min.   :15.14   Min.   : 0.00   Min.   : 0.14   Min.   :46.73  
+ 1st Qu.:25.66   1st Qu.: 0.00   1st Qu.: 5.60   1st Qu.:49.24  
+ Median :30.46   Median : 0.10   Median :10.16   Median :49.97  
+ Mean   :31.37   Mean   :11.52   Mean   :13.67   Mean   :51.17  
+ 3rd Qu.:35.73   3rd Qu.:19.14   3rd Qu.:16.88   3rd Qu.:52.32  
+ Max.   :64.87   Max.   :84.98   Max.   :92.63   Max.   :62.89  
+ NA's   :1       NA's   :1       NA's   :1       NA's   :1      
+      PM25         toxic_rele         hazardous_        lead_perce   
+ Min.   :3.787   Min.   :   823.9   Min.   :0.02303   Min.   : 0.24  
+ 1st Qu.:5.488   1st Qu.:  4143.8   1st Qu.:0.03985   1st Qu.: 5.34  
+ Median :6.044   Median :  8750.6   Median :0.05160   Median :11.99  
+ Mean   :6.002   Mean   : 17245.8   Mean   :0.07407   Mean   :16.60  
+ 3rd Qu.:6.579   3rd Qu.: 17237.2   3rd Qu.:0.07891   3rd Qu.:26.48  
+ Max.   :7.897   Max.   :186434.6   Max.   :0.63781   Max.   :54.68  
+ NA's   :1       NA's   :1          NA's   :1         NA's   :1      
+   superfund         facilities       wastewater          sen_pop_pe    
+ Min.   :0.03454   Min.   :0.0523   Min.   :0.0000000   Min.   :  1.00  
+ 1st Qu.:0.06595   1st Qu.:0.1420   1st Qu.:0.0000026   1st Qu.: 25.00  
+ Median :0.11046   Median :0.2680   Median :0.0002900   Median : 48.00  
+ Mean   :0.21695   Mean   :0.5246   Mean   :0.0161550   Mean   : 48.09  
+ 3rd Qu.:0.23841   3rd Qu.:0.7588   3rd Qu.:0.0029000   3rd Qu.: 71.00  
+ Max.   :1.46778   Max.   :3.3682   Max.   :0.6400000   Max.   :100.00  
+ NA's   :1         NA's   :1        NA's   :1           NA's   :1       
+   socio_perc                      GEOID      
+ Min.   :  1.00   1400000US53033032602:  286  
+ 1st Qu.: 20.00   1400000US53033032210:  236  
+ Median : 43.00   1400000US53033032329:  145  
+ Mean   : 44.51   1400000US53033005600:  134  
+ 3rd Qu.: 67.00   1400000US53033032203:  134  
+ Max.   :100.00   (Other)             :20500  
+ NA's   :1        NA's                :    1  
+                                        TRACTLABEL      low_income   
+ Census Tract 326.02, King County, Washington:  286   Min.   :  5.0  
+ Census Tract 322.10, King County, Washington:  236   1st Qu.: 67.0  
+ Census Tract 323.29, King County, Washington:  145   Median :102.0  
+ Census Tract 322.03, King County, Washington:  134   Mean   :144.6  
+ Census Tract 56, King County, Washington    :  134   3rd Qu.:191.0  
+ (Other)                                     :20500   Max.   :756.0  
+ NA's                                        :    1   NA's   :1      
+   mid_income      high_income     andel_hvit_alene  andel_svart_alene 
+ Min.   :  58.0   Min.   :  17.0   Min.   :0.09381   Min.   :0.000000  
+ 1st Qu.: 309.0   1st Qu.: 573.0   1st Qu.:0.57875   1st Qu.:0.007754  
+ Median : 422.0   Median : 813.0   Median :0.71575   Median :0.021700  
+ Mean   : 462.8   Mean   : 927.9   Mean   :0.68772   Mean   :0.051234  
+ 3rd Qu.: 590.0   3rd Qu.:1200.0   3rd Qu.:0.82493   3rd Qu.:0.066730  
+ Max.   :1349.0   Max.   :3135.0   Max.   :0.96698   Max.   :0.354851  
+ NA's   :1        NA's   :1        NA's   :1         NA's   :1         
+ andel_asiatisk_alene andel_andre_alene andel_blandet      
+ Min.   :0.001585     Min.   :0.00000   Min.   :0.0003978  
+ 1st Qu.:0.075033     1st Qu.:0.01026   1st Qu.:0.0831379  
+ Median :0.124285     Median :0.02144   Median :0.1133050  
+ Mean   :0.159030     Mean   :0.04178   Mean   :0.1204632  
+ 3rd Qu.:0.222871     3rd Qu.:0.05490   3rd Qu.:0.1519812  
+ Max.   :0.625245     Max.   :0.39761   Max.   :0.4359673  
+ NA's   :1            NA's   :1         NA's   :1          </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fjerner observasjoner med NA-verdier i områdevariablene</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>tracts10_join <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(tracts10_join)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lag year_month som en faktor-variabel</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>tracts10_join <span class="ot">&lt;-</span> tracts10_join <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_month =</span> <span class="fu">as.factor</span>(<span class="fu">format</span>(date, <span class="st">"%Y-%m"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lagre som .gpkg</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(tracts10_join, <span class="st">"house_data.gpkg"</span>, <span class="at">append=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Deleting layer `house_data' using driver `GPKG'
+Writing layer `house_data' to data source `house_data.gpkg' using driver `GPKG'
+Writing 21200 features with 74 fields and geometry type Point.</code></pre>
+</div>
+</div>
+</section>
+<section id="exploratory-data-analysis-eda" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-data-analysis-eda"><strong>Exploratory Data Analysis (EDA)</strong></h2>
+<p><strong>4. Utfør EDA i GeoDA</strong></p>
+<ul>
+<li>Lag et nytt prosjekt i GeoDA</li>
+<li>Last inn husdataene via .gpkg filen lagret ovenfor</li>
+<li>Generer en vekt fil utfra 3 og 10 nærmeste naboer</li>
+<li>Prøv å finne ut hvor de små og dyre, de store og dyre, de billige og store og de små og billige boligene ligger (prøv Bivariate Morans I)</li>
+<li>Dere kan eventuelt også eksperimentere med innledene SAR, SEM og lm modeller i GeoDa</li>
+</ul>
+<p><strong>5. Returner så til Quatro dokumentet</strong></p>
+<ul>
+<li>Gi en kort sammenfatning av funnene fra EDA.</li>
+</ul>
+</section>
+<section id="hedoniske-modeller" class="level2">
+<h2 class="anchored" data-anchor-id="hedoniske-modeller">Hedoniske modeller</h2>
+<ul>
+<li>Definer mint tre hedonske modeller. Ta utgangspunkt i Bishop et al.&nbsp;(<a href="https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-bishop2020">2020</a>) og diskuter gjerne valgte modeller utfra denne.
+<ol type="1">
+<li>En null modell med bare huskarakteristika og tids-dummier (year_month).</li>
+<li>En modell med huskarakteristika, dist_CBD, relevante tract-variabler og tids-dummier.</li>
+<li>En modell med huskarakteristika, dist_CBD, EHD indeks (eventuelt inntektsvariabel) og tids-dummier.</li>
+</ol></li>
+<li>Rapporter de tre modellen i en regresjonstabell (se eksemplet med modelsummary() og flextable ovenfor). Bruk robuste standard errors. Rapporter t-verdien som er det vanligste innen økonometri.</li>
+<li>Test og diskuter hvilken modell som er best. (Ta gjerne også en titt på <code>plot(&lt;lm_navnet&gt;)</code>)</li>
+</ul>
+<p><strong>6. Simultan test på tids-dummiene</strong></p>
+<ul>
+<li>Bruk en simultan test på tids-dummiene for å avgjøre om vi trenger disse i modellen (<code>car::linearHypothesis()</code>) med opsjonen <code>white_adjust =</code> “hc3” eller “hc4” eller også eventuelt “hc1” hvis dere ønsker å bruke Stata sin default.</li>
+</ul>
+</section>
+<section id="spatial-regressions" class="level2">
+<h2 class="anchored" data-anchor-id="spatial-regressions">Spatial Regressions</h2>
+<p><strong>7. Spatial Regressions</strong></p>
+<ul>
+<li>Last gruppens utvalg fra relevant .gpkg fil (tallene er seed verdiene som er brukt for å genererer utvalgene)</li>
+<li>Legg områdevariablene til det reduserte datasettet.</li>
+<li>Formuler modellen dere vil bruke. Kjør den som lm (OLS) modell og bruk <code>lm.morantest()</code> og <code>moran.plot()</code> på residualene for å avgjøre om vi har <em>uforklarte spatial effects</em> i residualene.</li>
+<li>Modellen skal inneholde områdevariablene familie inntekt og variabelen som angir etnisitet (rase).</li>
+<li>Generer vektmatrise ut fra k=3 og k=10 nærmeste naboer</li>
+<li>Bruk Anselin (<a href="https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988">1988</a>) sin teknikk med Lagrange Multiplikator test vha. <code>lm.LMtests()</code> og diskuter hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.</li>
+<li>Bruk så teknikken med nestede modeller anbefalt av LeSage (<a href="https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-lesage">n.d.</a>). Diskuter først om vi står overfor et <em>lokalt</em> eller <em>globalt</em> fenomen. Bruk opsjonen <code>durban = as.formula(~ variabelnavnene du vil ha impacts for)</code>. Dette for å slippe impacts for tidsdummiene. Test så de nestede modellne vha. <em>likelihood ratio test</em>. Hvilken modell synes å være den beste?</li>
+<li>For alternativet k=10 (10 nærmeste naboer). Bruk <code>moran.plot()</code> på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.</li>
+</ul>
+</section>
+<section id="diskusjon-av-resultater" class="level2">
+<h2 class="anchored" data-anchor-id="diskusjon-av-resultater">Diskusjon av resultater</h2>
+<p><strong>8. Diskusjon av resultatene</strong></p>
+<ul>
+<li>I denne oppgaven har dere estimert flere hedoniske prisfunksjoner. Hva er den økonomiske tolkningen av den hedoniske boligprismodellen? Bruk en grafisk presentasjon i svaret.</li>
+<li>Dere har estimert en OLS model, en spatial error model (SEM), en spatial lag model (SAR), en SLX modell og en spatial Durbin Error Model (SDEM). For hver av disse modellene skal dere tolke de estimerte koeffisientene. Dere kan bruke to estimerte koeffisienter i hver modell for denne oppgaven. Det vi er interessert i er det økonomiske innholdet i koeffisientene i lys av den hedoniske teorien.</li>
+<li>Er de estimerte koeffisientene dere har valgt å studere i hver modell signifikante og rimelige med hensyn til fortegn og størrelse?</li>
+<li>For SAR-modellen måp du bruke de estimerte virkningene (impacts) for å få et mål på de implisitte prisene.</li>
+<li>Bruk to estimerte impacts (direkte, indirekte og total impact knyttet til hver variabel), og gi en økonomisk tolkning av disse.</li>
+</ul>
+</section>
+<section id="konklusjon" class="level2">
+<h2 class="anchored" data-anchor-id="konklusjon">Konklusjon</h2>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

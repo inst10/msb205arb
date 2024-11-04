@@ -6,6 +6,7 @@
 	*.pptx
 	*.tex
 	*.md
+	*.DS_Store
 MandD/*
 # History files
 .Rhistory

@@ -571,10 +571,10 @@ data <- st_read("MandD/kc_house_data_4242.gpkg")
 library(sf)
 library(dplyr)
 
-# Velg nødvendige områdevariabler fra 'tracts10'
+# Velger nødvendige områdevariabler fra 'tracts10'
 tracts10_selected <- tracts10 %>% select(andel_hvit_alene, andel_svart_alene, andel_asiatisk_alene, andel_andre_alene, andel_blandet)
 
-# Slå sammen 'data' med områdevariablene fra 'tracts10'
+# Slår sammen 'data' med områdevariablene fra 'tracts10'
 data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
 ```
 
@@ -587,6 +587,48 @@ model_ols <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 
 summary(model_ols)
 ```
+
+Kommentar til OLS modellen:
+**Koeffisienter:**
+
+	•	**Intercept**: Konstantleddet (-247,700) er ikke signifikant (p = 0.2206), så den kan ikke tolkes som meningsfull.
+
+	•	**Bedrooms**: Koeffisienten for antall soverom (-54,050) er signifikant (p \< 0.001) og negativ.
+Dette kan virke kontraintuitivt, men det kan være et tegn på at større boliger med flere soverom har andre karakteristikker som påvirker prisen (som mindre stuer eller eldre boliger).
+
+	•	**Bathrooms**: Koeffisienten (-5,285) er ikke signifikant (p = 0.651), så antall bad ser ikke ut til å ha noen klar effekt på prisen i denne modellen.
+
+	•	**Sqft_living**: Størrelsen på boligen (kvadratfot boareal) har en sterk positiv og signifikant effekt på pris (β = 308.1, p \< 0.001).
+Dette er forventet, ettersom større boliger vanligvis er dyrere.
+
+	•	**Sqft_lot**: Størrelsen på tomten har en liten, men signifikant negativ effekt på prisen (β = -0.5161, p \< 0.001).
+Dette kan tyde på at større tomter ikke nødvendigvis øker prisen, kanskje fordi andre faktorer som beliggenhet veier tyngre.
+
+	•	**Floors**: Antall etasjer har ingen signifikant effekt på prisen (p = 0.659), noe som tyder på at dette ikke er en viktig prisdriver i denne modellen.
+
+	•	**Andel hvit alene**: Denne variabelen er positiv og signifikant (β = 452,600, p = 0.033), noe som indikerer at i områder hvor en større andel av befolkningen er hvit alene, har boliger en tendens til å ha høyere priser.
+
+	•	**Andel svart alene**: Koeffisienten (-91,680) er ikke signifikant (p = 0.707), så det ser ikke ut til at denne variabelen har en klar effekt på prisene.
+
+	•	**Andel asiatisk alene**: Denne variabelen har en positiv og signifikant effekt (β = 498,400, p = 0.021), noe som indikerer høyere boligpriser i områder med større andel av asiatisk befolkning.
+
+	•	**Andel andre alene**: Denne koeffisienten (-396,200) er ikke signifikant (p = 0.107), men trenden ser ut til å være negativ, noe som antyder at det kan være en svak sammenheng mellom denne variabelen og lavere boligpriser.
+
+	•	**Andel blandet**: Denne variabelen ble ikke estimert på grunn av “singularities,” som kan skyldes at det er perfekt korrelasjon mellom denne variabelen og andre i modellen.
+
+**Modellens forklaringskraft:**
+
+**R²**: Den multiple R² er 0.5837, noe som betyr at modellen forklarer omtrent 58.4 % av variasjonen i boligprisene.
+Dette er en moderat god forklaringskraft for en slik modell, men det er fortsatt en betydelig mengde variasjon i prisene som ikke forklares av modellen.
+
+**F-test**: F-testen er signifikant (p \< 2.2e-16), noe som indikerer at modellen som helhet er statistisk signifikant og at minst én av variablene har en effekt på boligprisene.
+
+**Samlet vurdering:**
+
+Modellen gir rimelig gode forklaringer på hvordan noen boligkarakteristikker og demografiske variabler påvirker prisene, men det er klart at ikke alle variablene er like viktige.
+Kvadratfot boareal er den sterkeste driveren av boligprisene, mens variabler som antall etasjer og bad ikke ser ut til å spille en stor rolle.
+De demografiske variablene gir noen interessante funn, spesielt effekten av andel hvit alene og andel asiatisk alene, som begge er positive og signifikante.
+Dette kan gi innsikt i hvordan befolkningssammensetningen i områder kan påvirke boligprisene.
 
 ```{r}
 #| echo: false

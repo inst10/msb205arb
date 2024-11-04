@@ -563,11 +563,13 @@ Vår guppe sitt datasett kc_house_data_4242.gpkg
 
 ```{r}
 #| echo: false
+#| output: false
 data <- st_read("MandD/kc_house_data_4242.gpkg")
 ```
 
 ```{r}
 #| echo: false
+#| output: false
 library(sf)
 library(dplyr)
 
@@ -649,6 +651,7 @@ lw10 <- nb2listw(nb10, style = "W")
 
 ```{r}
 #| echo: false
+#| output: false
 library(spdep)
 
 # Lagrange Multiplikator tester med k = 3
@@ -693,21 +696,25 @@ Det globale aspektet understrekes av det faktum at spatial avhengighet observere
 
 ```{r}
 #| echo: false
+#| output: false
 SDEM <- errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, Durbin = TRUE)
 ```
 
 ```{r}
 #| echo: false
+#| output: false
 summary(SDEM)
 ```
 
 ```{r}
 #| echo: false
+#| output: false
 summary(impacts(SDEM), zstats = TRUE)
 ```
 
 ```{r}
 #| echo: false
+#| output: false
 # Spatial Error Model (SEM)
 SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                   andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
@@ -719,11 +726,13 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
 
     ```{r}
     #| echo: false
+    #| output: false
     summary(SEM)
     ```
 
     ```{r}
     #| echo: false
+    #| output: false
     # SLX-modell (Spatial Lag of X)
     SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                     andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
@@ -733,11 +742,13 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
 
 ```{r}
 #| echo: false
+#| output: false
 summary(SLX)
 ```
 
 ```{r}
 #| echo: false
+#| output: false
 # Beregn residualene for OLS-modellen
 residuals_ols <- residuals(model_ols)
 
@@ -806,82 +817,6 @@ Dette indikerer at SLX-modellen er mindre effektiv når det gjelder å fjerne sp
 
 Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon best, med SEM som en lett overlegen modell, mens **OLS** sliter mest med å håndtere de romlige effektene.
 **SLX-modellen** klarer å redusere noe av den spatial avhengigheten, men ikke i like stor grad som SEM og SDEM.
-
-Diskusjon av resultater
-
-For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer.
-Hver modell (OLS, SEM, SAR, SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.
-
-**Økonomisk tolkning av den hedoniske boligprismodellen**
-
-Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
-Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper.
-I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene.
-For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
-
-Vi kan illustrere denne tolkningen ved å lage en graf som viser sammenhengen mellom en boligs pris og noen utvalgte egenskaper.
-
-**Grafisk presentasjon**
-
-En enkel måte å visualisere den økonomiske betydningen på er å vise en graf der x-aksen representerer en boligattributt (for eksempel boligstørrelse eller andel hvite alene) og y-aksen viser boligprisen.
-Vi kan også inkludere den estimerte koeffisienten for hver modell for å illustrere hvordan romlige effekter endrer betydningen av disse attributtene.
-
-**Diskusjon av de estimerte koeffisientene for hver modell**
-
-For hver modell tolker vi to utvalgte koeffisienter (f.eks., sqft_living og andel_hvit_alene) og diskuterer deres økonomiske betydning, signifikans og rimelighet.
-
-**1. OLS-modellen**
-
-Koeffisient for\*\* sqft_living: Den positive koeffisienten indikerer at større boliger er assosiert med høyere priser.
-
-Dette er rimelig, ettersom boligkjøpere vanligvis verdsetter større areal.
-Signifikansen av denne koeffisienten bekrefter at boligstørrelse er en viktig faktor.
-
-Koeffisient for\*\* andel_hvit_alene: En positiv eller negativ koeffisient her kan indikere preferanser basert på nabolagssammensetning.
-
-Hvis koeffisienten er signifikant, kan det tyde på at demografiske faktorer har en økonomisk betydning i boligmarkedet.
-
-**2. SEM-modellen (Spatial Error Model)**
-
-Koeffisient for\*\* sqft_living: SEM-modellen reduserer spatial autokorrelasjon i residualene, noe som gir en renere effekt av boligstørrelsen på pris.
-
-Koeffisienten forblir positiv, noe som fortsatt indikerer at større boliger gir høyere priser.
-
-Koeffisient for\*\* andel_hvit_alene: Den spatialt justerte modellen tar høyde for romlige feilkorrelasjoner, noe som kan gi et mer pålitelig estimat for demografiske preferanser og redusere skjevheter fra naboområder.
-
-**3. SAR-modellen (Spatial Lag Model)**
-
-For SAR-modellen må vi bruke **direkte og indirekte impacts** for å tolke effekten av variablene, da disse gir oss en mer fullstendig forståelse av både lokale og globale effekter.
-
-Direkte impact for\*\* sqft_living: Direkte effekten viser hvordan en økning i boligstørrelsen påvirker prisen i samme område.
-
-Den positive direkte effekten betyr at større boliger gir høyere priser, selv etter å ha tatt hensyn til naboers priser.
-
-Indirekte impact for\*\* andel_hvit_alene: Den indirekte effekten indikerer hvordan sammensetningen i ett nabolag påvirker prisene i omkringliggende områder.
-
-Hvis andel_hvit_alene har en signifikant indirekte effekt, betyr det at demografiske faktorer i ett område påvirker boligpriser i nærliggende områder også.
-
-**4. SLX-modellen (Spatial Lag of X)**
-
-**Koeffisient for** sqft_living: I SLX-modellen ser vi kun på effekten av laggede uavhengige variabler, og sqft_living har en positiv koeffisient, noe som betyr at prisene påvirkes direkte av boligens størrelse, og dette er romlig avhengig av naboenes boligstørrelse.
-
-**Koeffisient for** andel_hvit_alene: Denne koeffisienten kan fange opp naboers demografiske påvirkning på boligprisen i en gitt bolig.
-
-Hvis signifikant, betyr det at nabolagssammensetningen har en økonomisk innvirkning, også i forhold til nærliggende nabolag.
-
-**5. SDEM-modellen (Spatial Durbin Error Model)**
-
-**Direkte effekt for** sqft_living: Den positive direkte effekten for sqft_living antyder at større boliger har høyere priser, selv etter å ha kontrollert for spatial feilavhengighet og effekten av nabolagsegenskaper.
-
-I**ndirekte effekt for** andel_hvit_alene: Den indirekte effekten viser hvordan nabolagskomposisjonen påvirker omkringliggende boligpriser.
-
-Hvis signifikant, indikerer dette at demografiske faktorer ikke bare påvirker lokalt, men også har en viss spillover-effekt til andre nærliggende områder.
-
-**Konklusjon**
-
-Den hedoniske boligprismodellen viser oss hvordan boligkjøpere verdsetter ulike boligelementer, og ved å bruke romlige modeller som SAR, SEM, SLX og SDEM får vi bedre innsikt i de økonomiske effektene av både lokale og globale romlige forhold.
-Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg.
-Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.
 
 ## ***8. Diskusjon av resultatene***
 

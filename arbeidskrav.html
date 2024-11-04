@@ -20,40 +20,6 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
@@ -96,18 +62,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="data" class="level2">
-<h2 class="anchored" data-anchor-id="data">Data</h2>
-<p><strong>1. House Sales King County, USA fra Kaggle</strong></p>
-<p><strong>2. WADOH Environmental Health Disparities Index Calculated for King County</strong></p>
-<p><strong>3. Gjør en «spatial join» av husdata med tracts10</strong></p>
+<section id="house-sales-king-county-usa-fra-kaggle" class="level2">
+<h2 class="anchored" data-anchor-id="house-sales-king-county-usa-fra-kaggle"><strong>1. House Sales King County, USA fra Kaggle</strong></h2>
+<p>Laster inn datasett.</p>
+</section>
+<section id="wadoh-environmental-health-disparities-index-calculated-for-king-county" class="level2">
+<h2 class="anchored" data-anchor-id="wadoh-environmental-health-disparities-index-calculated-for-king-county"><strong>2. WADOH Environmental Health Disparities Index Calculated for King County</strong></h2>
+<p>Laster inn datasett.</p>
+</section>
+<section id="gjør-en-spatial-join-av-husdata-med-tracts10" class="level2">
+<h2 class="anchored" data-anchor-id="gjør-en-spatial-join-av-husdata-med-tracts10"><strong>3. Gjør en «spatial join» av husdata med tracts10</strong></h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Spatial join mellom husdata og tracts10</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>tracts10_join <span class="ot">&lt;-</span> <span class="fu">st_join</span>(kc_house_data, tracts10)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sjekk områdevariablene i tracts10</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(tracts10_join)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>      id                 date                             year     
  Length:21436       Min.   :2014-05-02 00:00:00.00   Min.   :2014  
@@ -272,79 +237,942 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fjerner observasjoner med NA-verdier i områdevariablene</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>tracts10_join <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(tracts10_join)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lag year_month som en faktor-variabel</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>tracts10_join <span class="ot">&lt;-</span> tracts10_join <span class="sc">%&gt;%</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_month =</span> <span class="fu">as.factor</span>(<span class="fu">format</span>(date, <span class="st">"%Y-%m"</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lagre som .gpkg</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">st_write</span>(tracts10_join, <span class="st">"house_data.gpkg"</span>, <span class="at">append=</span><span class="cn">FALSE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Deleting layer `house_data' using driver `GPKG'
-Writing layer `house_data' to data source `house_data.gpkg' using driver `GPKG'
+<pre><code>Writing layer `house_data' to data source `house_data.gpkg' using driver `GPKG'
 Writing 21200 features with 74 fields and geometry type Point.</code></pre>
 </div>
 </div>
 </section>
 <section id="exploratory-data-analysis-eda" class="level2">
 <h2 class="anchored" data-anchor-id="exploratory-data-analysis-eda"><strong>Exploratory Data Analysis (EDA)</strong></h2>
-<p><strong>4. Utfør EDA i GeoDA</strong></p>
-<ul>
-<li>Lag et nytt prosjekt i GeoDA</li>
-<li>Last inn husdataene via .gpkg filen lagret ovenfor</li>
-<li>Generer en vekt fil utfra 3 og 10 nærmeste naboer</li>
-<li>Prøv å finne ut hvor de små og dyre, de store og dyre, de billige og store og de små og billige boligene ligger (prøv Bivariate Morans I)</li>
-<li>Dere kan eventuelt også eksperimentere med innledene SAR, SEM og lm modeller i GeoDa</li>
-</ul>
-<p><strong>5. Returner så til Quatro dokumentet</strong></p>
-<ul>
-<li>Gi en kort sammenfatning av funnene fra EDA.</li>
-</ul>
+</section>
+<section id="utfør-eda-i-geoda" class="level2">
+<h2 class="anchored" data-anchor-id="utfør-eda-i-geoda"><strong>4. Utfør EDA i GeoDA</strong></h2>
+<p><img src="images/clipboard-1966060883.png" class="img-fluid"></p>
+<p><img src="images/clipboard-2834459025.png" class="img-fluid"></p>
+<p><strong>Sammenligning av Moran’s I-verdier</strong></p>
+<p>For vektor3 (de 3 nærmeste naboene) er <strong>Moran’s I</strong> = 0.406.</p>
+<p>For vektor10 (de 10 nærmeste naboene) er <strong>Moran’s I</strong> = 0.353</p>
+<p><strong>Tolkning</strong>: Begge Moran’s I-verdiene er positive, noe som indikerer en positiv romlig autokorrelasjon. Dette betyr at det er en tendens for høye prisverdier å være assosiert med høye verdier for boligareal (og tilsvarende for lave verdier). Når du inkluderer flere naboer (går fra vektor3 til vektor10), reduseres styrken på den romlige autokorrelasjonen noe, noe som tyder på at den romlige sammenhengen mellom pris og størrelse er sterkere på en lokal skala.</p>
+<p><strong>Skala-effekter og romlig sammenheng</strong></p>
+<p>Ved å bruke vektor3 (de 3 nærmeste naboene) får du en høyere Moran’s I-verdi enn med vektor10. Dette antyder at relasjonen mellom pris og størrelse er mer markant når man ser på umiddelbare naboer.</p>
+<p>Når du inkluderer flere naboer med vektor10, ser du en liten nedgang i Moran’s I. Dette kan skyldes at det romlige mønsteret er sterkest på en liten skala, og at effekten svekkes når flere, mer fjerntliggende naboer inkluderes.</p>
+<p><strong>Praktisk tolkning</strong></p>
+<p><strong>Lokale mønstre</strong>: De høyere Moran’s I-verdiene for vektor3 kan indikere at små grupper av boliger med høy pris og stort areal tenderer å være konsentrert i visse områder. Dette kan reflektere “hot spots” hvor dyre og store boliger samles.</p>
+<p><strong>Områder med lav pris og areal</strong>: Tilsvarende kan det også finnes lokale områder (clusters) hvor boliger med lav pris og mindre areal samles.</p>
+<p><strong>Større skala</strong>: Når du går over til vektor10, kan det bety at romlige sammenhenger fremdeles finnes, men er noe mindre uttalt, noe som kan indikere at pris og størrelse varierer mer på tvers av større områder.</p>
+<p><strong>1. Små og Dyre Boliger</strong></p>
+<p><strong>Vektor3</strong> (3 nærmeste naboer): Med vektor3 ser vi en sterkere autokorrelasjon.</p>
+<p>Små og dyre boliger vil sannsynligvis ligge i områder hvor prisene er høye til tross for mindre boligareal, og disse vil være geografisk konsentrert rundt spesifikke, mindre nabolag.</p>
+<p><strong>Vektor10</strong> (10 nærmeste naboer): Med vektor10 ser vi en noe svakere romlig autokorrelasjon.</p>
+<p>Dette antyder at de små, dyre boligene er mindre konsentrert på en større skala. Dette kan bety at små og dyre boliger er litt mer spredt utover større områder, men finnes fortsatt i visse høyprissegmenter.</p>
+<p><strong>2. Store og Dyre Boliger</strong></p>
+<p><strong>Vektor3:</strong> Store og dyre boliger vil vises som områder hvor både pris og boligareal er høyt, og vi ser at dette er mer lokalt konsentrert når vi bruker vektor3.</p>
+<p>Slike “hot spots” for store, dyre boliger indikerer at visse luksuriøse nabolag kan være romlig nær hverandre.</p>
+<p><strong>Vektor10:</strong> Når vi øker skalaen til de 10 nærmeste naboene, vil noen av disse dyre og store boligene fortsatt være romlig konsentrert, men det viser en mer utvidet sammenheng, som kan bety at områder med store og dyre boliger strekker seg over flere nabolag i regionen.</p>
+<p><strong>3. Billige og Store Boliger</strong></p>
+<p><strong>Vektor3:</strong> Med vektor3 vil store, men rimelige boliger trolig ligge i spesifikke områder hvor store boliger finnes, men med lavere prisnivåer.</p>
+<p>Disse kan være lokalisert i utkanter eller mindre ettertraktede områder, hvor arealet er stort, men etterspørselen er lavere.</p>
+<p><strong>Vektor10:</strong> Når du ser på vektor10, kan disse billige og store boligene være mer spredt og ikke nødvendigvis konsentrert.</p>
+<p>Dette antyder at når vi går til større skalaer, finnes det flere områder med billige, store boliger som kan spre seg over flere nabolag eller ligger i mer spredte områder.</p>
+<p><strong>4. Små og Billige Boliger</strong></p>
+<p><strong>Vektor3:</strong> Små og billige boliger er mest sannsynlig geografisk konsentrert i visse områder med lave priser og mindre boliger.</p>
+<p>Dette kan være områder med tettere bebyggelse eller mindre attraktive boliger, som kan indikere mindre nabolag med lav etterspørsel.</p>
+<p><strong>Vektor10:</strong> Når vi øker skalaen til de 10 nærmeste naboene, vil disse små, billige boligene trolig finnes i mer spredte eller blandede områder.</p>
+<p>Vi ser at pris og størrelse fremdeles viser en positiv korrelasjon, men på en litt bredere geografisk skala, noe som kan indikere at små og rimelige boliger finnes i en bredere del av regionen.</p>
+<p><strong>Oppsummering:</strong></p>
+<p>Lokal konsentrasjon med vektor3: Når vi ser på de 3 nærmeste naboene, får vi et tydeligere bilde av lokale “hot spots” og “cold spots” for hver av boligtypene.</p>
+<p>Dette betyr at små og dyre, store og dyre, store og billige, og små og billige boliger er mer lokalt konsentrert.</p>
+<p>Mer spredt mønster med vektor10: Når vi inkluderer de 10 nærmeste naboene, ser vi at mønstrene for boligtypene blir mer spredt.</p>
+<p>Dette antyder at mønstrene ikke er like sterke på en større skala, og at ulike boligtyper kan finnes i flere ulike områder over et bredere geografisk område.</p>
 </section>
 <section id="hedoniske-modeller" class="level2">
-<h2 class="anchored" data-anchor-id="hedoniske-modeller">Hedoniske modeller</h2>
-<ul>
-<li>Definer mint tre hedonske modeller. Ta utgangspunkt i Bishop et al.&nbsp;(<a href="https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-bishop2020">2020</a>) og diskuter gjerne valgte modeller utfra denne.
+<h2 class="anchored" data-anchor-id="hedoniske-modeller">5. Hedoniske modeller</h2>
 <ol type="1">
-<li>En null modell med bare huskarakteristika og tids-dummier (year_month).</li>
-<li>En modell med huskarakteristika, dist_CBD, relevante tract-variabler og tids-dummier.</li>
-<li>En modell med huskarakteristika, dist_CBD, EHD indeks (eventuelt inntektsvariabel) og tids-dummier.</li>
-</ol></li>
-<li>Rapporter de tre modellen i en regresjonstabell (se eksemplet med modelsummary() og flextable ovenfor). Bruk robuste standard errors. Rapporter t-verdien som er det vanligste innen økonometri.</li>
-<li>Test og diskuter hvilken modell som er best. (Ta gjerne også en titt på <code>plot(&lt;lm_navnet&gt;)</code>)</li>
-</ul>
-<p><strong>6. Simultan test på tids-dummiene</strong></p>
+<li>En null modell med bare huskarakteristika og tids-dummier (year_month)</li>
+</ol>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + 
+    floors + year_month, data = tracts10_join)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1575602  -143497   -22353   102720  4140597 
+
+Coefficients:
+                    Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)        7.989e+04  9.841e+03   8.118 4.98e-16 ***
+bedrooms          -5.961e+04  2.382e+03 -25.021  &lt; 2e-16 ***
+bathrooms          6.795e+03  3.856e+03   1.762  0.07807 .  
+sqft_living        3.156e+02  3.167e+00  99.650  &lt; 2e-16 ***
+sqft_lot          -3.993e-01  4.553e-02  -8.770  &lt; 2e-16 ***
+floors            -3.785e+03  3.815e+03  -0.992  0.32114    
+year_month2014-06  6.016e+03  8.364e+03   0.719  0.47197    
+year_month2014-07 -7.288e+03  8.327e+03  -0.875  0.38147    
+year_month2014-08 -2.473e+03  8.589e+03  -0.288  0.77341    
+year_month2014-09 -7.838e+03  8.785e+03  -0.892  0.37226    
+year_month2014-10  6.438e+02  8.661e+03   0.074  0.94074    
+year_month2014-11 -7.658e+03  9.314e+03  -0.822  0.41095    
+year_month2014-12 -1.685e+04  9.195e+03  -1.833  0.06680 .  
+year_month2015-01 -1.271e+04  1.041e+04  -1.222  0.22174    
+year_month2015-02 -1.215e+04  9.625e+03  -1.262  0.20684    
+year_month2015-03  2.403e+04  8.635e+03   2.783  0.00538 ** 
+year_month2015-04  2.922e+04  8.298e+03   3.522  0.00043 ***
+year_month2015-05  3.468e+04  1.198e+04   2.894  0.00381 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 257800 on 21182 degrees of freedom
+Multiple R-squared:   0.51, Adjusted R-squared:  0.5096 
+F-statistic:  1297 on 17 and 21182 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>2.En modell med huskarakteristika, dist_CBD, relevante tract-variabler og tids-dummier.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + 
+    floors + dist_cbd[, 1] + transporta + poverty_pe + year_month, 
+    data = tracts10_join)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1517596  -105970   -15644    74097  4091188 
+
+Coefficients:
+                    Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)        8.455e+05  2.702e+04  31.295  &lt; 2e-16 ***
+bedrooms          -4.920e+04  2.005e+03 -24.540  &lt; 2e-16 ***
+bathrooms          1.934e+04  3.244e+03   5.961 2.54e-09 ***
+sqft_living        2.945e+02  2.714e+00 108.515  &lt; 2e-16 ***
+sqft_lot           4.285e-01  3.959e-02  10.824  &lt; 2e-16 ***
+floors            -2.277e+04  3.233e+03  -7.042 1.95e-12 ***
+dist_cbd[, 1]     -9.749e+03  2.183e+02 -44.666  &lt; 2e-16 ***
+transporta        -2.390e+04  1.329e+03 -17.986  &lt; 2e-16 ***
+poverty_pe        -7.492e+03  1.856e+02 -40.361  &lt; 2e-16 ***
+year_month2014-06  1.056e+04  7.016e+03   1.505    0.132    
+year_month2014-07  2.932e+03  6.987e+03   0.420    0.675    
+year_month2014-08  8.832e+03  7.207e+03   1.226    0.220    
+year_month2014-09  2.521e+03  7.370e+03   0.342    0.732    
+year_month2014-10  7.249e+03  7.267e+03   0.998    0.319    
+year_month2014-11 -2.033e+03  7.814e+03  -0.260    0.795    
+year_month2014-12 -1.383e+03  7.715e+03  -0.179    0.858    
+year_month2015-01  3.829e+03  8.731e+03   0.439    0.661    
+year_month2015-02  1.077e+04  8.078e+03   1.333    0.183    
+year_month2015-03  3.809e+04  7.245e+03   5.258 1.47e-07 ***
+year_month2015-04  3.746e+04  6.961e+03   5.381 7.47e-08 ***
+year_month2015-05  4.824e+04  1.005e+04   4.797 1.62e-06 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 216300 on 21179 degrees of freedom
+Multiple R-squared:  0.6553,    Adjusted R-squared:  0.6549 
+F-statistic:  2013 on 20 and 21179 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>3.En modell med huskarakteristika, dist_CBD, EHD indeks (eventuelt inntektsvariabel) og tids-dummier.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + 
+    floors + dist_cbd[, 1] + EHD_percen + year_month, data = tracts10_join)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1541263  -104290   -16658    70295  4140162 
+
+Coefficients:
+                    Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)        4.053e+05  8.994e+03  45.066  &lt; 2e-16 ***
+bedrooms          -4.634e+04  1.988e+03 -23.306  &lt; 2e-16 ***
+bathrooms          2.029e+04  3.212e+03   6.316 2.73e-10 ***
+sqft_living        2.881e+02  2.666e+00 108.069  &lt; 2e-16 ***
+sqft_lot           2.230e-01  3.909e-02   5.704 1.19e-08 ***
+floors            -1.889e+04  3.176e+03  -5.948 2.76e-09 ***
+dist_cbd[, 1]     -1.228e+04  1.452e+02 -84.535  &lt; 2e-16 ***
+EHD_percen        -2.575e+03  5.527e+01 -46.591  &lt; 2e-16 ***
+year_month2014-06  1.103e+04  6.950e+03   1.587   0.1126    
+year_month2014-07  3.231e+03  6.920e+03   0.467   0.6406    
+year_month2014-08  7.152e+03  7.138e+03   1.002   0.3163    
+year_month2014-09  1.669e+03  7.300e+03   0.229   0.8191    
+year_month2014-10  9.103e+03  7.197e+03   1.265   0.2059    
+year_month2014-11 -1.785e+02  7.739e+03  -0.023   0.9816    
+year_month2014-12 -1.270e+02  7.642e+03  -0.017   0.9867    
+year_month2015-01  8.257e+03  8.648e+03   0.955   0.3397    
+year_month2015-02  1.547e+04  8.002e+03   1.933   0.0533 .  
+year_month2015-03  4.055e+04  7.177e+03   5.650 1.62e-08 ***
+year_month2015-04  3.925e+04  6.896e+03   5.692 1.27e-08 ***
+year_month2015-05  5.157e+04  9.960e+03   5.177 2.27e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 214200 on 21180 degrees of freedom
+Multiple R-squared:  0.6618,    Adjusted R-squared:  0.6615 
+F-statistic:  2181 on 19 and 21180 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
 <ul>
-<li>Bruk en simultan test på tids-dummiene for å avgjøre om vi trenger disse i modellen (<code>car::linearHypothesis()</code>) med opsjonen <code>white_adjust =</code> “hc3” eller “hc4” eller også eventuelt “hc1” hvis dere ønsker å bruke Stata sin default.</li>
+<li>Rapporter de tre modellen i en regresjonstabell (se eksemplet med modelsummary() og flextable ovenfor). Bruk robuste standard errors. Rapporter t-verdien som er det vanligste innen økonometri.</li>
+<li>Test og diskuter hvilken modell som er best.</li>
 </ul>
+<p><strong>Sammenlign modeller basert på R-squared og justert R-squared</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5100385</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6552635</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6617564</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5096453</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.654938</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.6614529</code></pre>
+</div>
+</div>
+<p><strong>Nullmodellen</strong> har den laveste R-squared og justert R-squared, noe som tyder på at den forklarer minst av variasjonen i dataene.</p>
+<p><strong>Modell 2</strong> har en betydelig høyere R-squared og justert R-squared enn nullmodellen, noe som indikerer en bedre forklaringsevne.</p>
+<p><strong>Modell 3</strong> har den høyeste R-squared og justert R-squared, som tyder på at den gir den beste forklaringen av boligprisene blant de tre modellene.</p>
+<p><strong>Konklusjon</strong>: Basert på R-squared og justert R-squared ser Modell 3 ut til å være den mest pålitelige av de tre, da den forklarer mest av variasjonen i boligprisene.</p>
+<p><strong>Sammenlign modeller basert på AIC og BIC</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>       df      AIC
+model1 19 588488.8
+model2 22 581042.0
+model3 21 580636.9</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       df      BIC
+model1 19 588640.0
+model2 22 581217.1
+model3 21 580804.1</code></pre>
+</div>
+</div>
+<p><strong>Tolking av AIC-verdiene</strong></p>
+<p><strong>Model1</strong> har en AIC-verdi på 588488.8.</p>
+<p><strong>Model2</strong> har en AIC-verdi på 581042.0.</p>
+<p><strong>Model3</strong> har den laveste AIC-verdien på 580636.9.</p>
+<p>Lavere AIC-verdi betyr at model3 er å foretrekke over model1 og model2, siden den gir en bedre balanse mellom tilpasning og kompleksitet.</p>
+<p><strong>Tolking av BIC-verdiene</strong></p>
+<p><strong>Model1</strong> har en BIC-verdi på 588640.0.</p>
+<p><strong>Model2</strong> har en BIC-verdi på 581217.1.</p>
+<p><strong>Model3</strong> har den laveste BIC-verdien på 580804.1.</p>
+<p>BIC-verdi følger samme prinsipp som AIC: lavere verdier er bedre. Også her har model3 den laveste verdien, noe som indikerer at model3 er den beste modellen av de tre når man også tar hensyn til modellens kompleksitet.</p>
+<p><strong>Sammenfattende konklusjon</strong></p>
+<p>Både AIC- og BIC-resultatene viser at model3 gir den beste tilpasningen blant de tre modellene, da den har lavere AIC- og BIC-verdier sammenlignet med model1 og model2. Dette støtter konklusjonen fra R-squared og justert R-squared analysen, hvor model3 også hadde de høyeste verdiene. Totalt sett er model3 den mest optimale modellen basert på AIC, BIC, og forklaringskraft.</p>
+<p><strong>Residualanalyse med plot() for å vurdere modellens egenskaper</strong></p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-31-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-31-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-31-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>1. Residuals vs Fitted</strong></p>
+<p>Dette plottet viser forholdet mellom residualene og de tilpassede verdiene. Et godt tilpasset lineært forhold skal vise en tilfeldig fordeling av punktene rundt null-linjen, uten tydelige mønstre.</p>
+<p>I alle modellene ser vi litt avvik fra en helt jevn fordeling. For noen av modellene, spesielt Nullmodellen, kan vi se noen mønstre som tyder på at modellen ikke helt fanger opp alle aspekter av dataene.</p>
+<p>Modell 3 ser ut til å ha en jevnere fordeling enn de andre modellene, noe som indikerer at denne modellen kan ha en bedre tilpasning.</p>
+<p><strong>2. Normal Q-Q Plot</strong></p>
+<p>Q-Q-plottet viser om residualene er normalfordelte ved å plotte de standardiserte residualene mot de teoretiske kvantilene for en normalfordeling.</p>
+<p>I alle modellene ser vi at noen punkter, spesielt i ytterkantene, avviker betydelig fra den teoretiske linjen. Dette indikerer at det er enkelte avvik eller “outliers” som ikke følger normalfordelingen.</p>
+<p>Modell 3 ser ut til å ha litt færre avvik enn de andre modellene, men det er fortsatt tegn på at noen residualer ikke er helt normalfordelte.</p>
+<p><strong>3. Scale-Location (Spread-Location) Plot</strong></p>
+<p>Dette plottet viser kvadratroten av de standardiserte residualene mot de tilpassede verdiene. En jevn fordeling av punktene langs null-linjen indikerer homoskedastisitet (lik varians).</p>
+<p>I alle modellene ser vi en svak trend der variansen øker med de tilpassede verdiene, noe som indikerer at det kan være heteroskedastisitet (ulik varians).</p>
+<p>Modell 3 ser igjen litt bedre ut enn Nullmodellen og Modell 2, men heteroskedastisitet kan fortsatt være et problem.</p>
+<p><strong>4. Residuals vs Leverage</strong></p>
+<p>Dette plottet viser hvilke observasjoner som har stor innflytelse på modellen (leverage) og hvor store residualene er for disse observasjonene. Punkter som ligger langt fra de fleste dataene, og spesielt de som har høy leverage, kan være “influential points” som påvirker modellen betydelig.</p>
+<p>I alle modellene ser vi noen observasjoner med høy leverage, spesielt i ytterkantene. Cook’s distance-linjene hjelper oss å identifisere punkter med stor påvirkning. For eksempel ser vi noen observasjoner som kan påvirke modellens resultater betydelig.</p>
+<p>Modell 3 ser ut til å ha færre punkter med høy leverage enn de andre modellene, noe som kan indikere en bedre robusthet mot ekstreme observasjoner.</p>
+<p><strong>Konklusjon</strong></p>
+<p>Samlet sett gir Modell 3 den beste tilpasningen blant de tre, men det er fortsatt noen utfordringer. Den har en jevnere fordeling i Residuals vs Fitted og færre punkter med høy leverage sammenlignet med de andre modellene, noe som indikerer bedre tilpasning. Men normalitet og homoskedastisitet er fortsatt utfordrende for alle modellene, noe som tyder på at det kan være rom for videre forbedring, eventuelt med alternative modeller eller transformasjoner av variablene.</p>
+</section>
+<section id="simultan-test-på-tids-dummiene" class="level2">
+<h2 class="anchored" data-anchor-id="simultan-test-på-tids-dummiene"><strong>6. Simultan test på tids-dummiene</strong></h2>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Resultat for Model 1:"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Linear hypothesis test:
+year_month2014-06
+year_month2014-07
+year_month2014-08
+year_month2014-09
+year_month2014-10
+year_month2014-11
+year_month2014-12
+year_month2015-01
+year_month2015-02
+year_month2015-03
+year_month2015-04
+year_month2015-05
+
+Model 1: restricted model
+Model 2: price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+    year_month
+
+Note: Coefficient covariance matrix supplied.
+
+  Res.Df Df     F    Pr(&gt;F)    
+1  21194                       
+2  21182 12 5.717 6.082e-10 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Resultat for Model 2:"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Linear hypothesis test:
+year_month2014-06
+year_month2014-07
+year_month2014-08
+year_month2014-09
+year_month2014-10
+year_month2014-11
+year_month2014-12
+year_month2015-01
+year_month2015-02
+year_month2015-03
+year_month2015-04
+year_month2015-05
+
+Model 1: restricted model
+Model 2: price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+    dist_cbd[, 1] + transporta + poverty_pe + year_month
+
+Note: Coefficient covariance matrix supplied.
+
+  Res.Df Df      F    Pr(&gt;F)    
+1  21191                        
+2  21179 12 8.2016 1.245e-15 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Resultat for Model 3:"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Linear hypothesis test:
+year_month2014-06
+year_month2014-07
+year_month2014-08
+year_month2014-09
+year_month2014-10
+year_month2014-11
+year_month2014-12
+year_month2015-01
+year_month2015-02
+year_month2015-03
+year_month2015-04
+year_month2015-05
+
+Model 1: restricted model
+Model 2: price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+    dist_cbd[, 1] + EHD_percen + year_month
+
+Note: Coefficient covariance matrix supplied.
+
+  Res.Df Df      F    Pr(&gt;F)    
+1  21192                        
+2  21180 12 9.1943 &lt; 2.2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</div>
+</div>
+<p><strong>Tolkning av resultatene for hver modell</strong></p>
+<p><strong>Model 1</strong></p>
+<p><strong>F-verdi</strong>: 5.717</p>
+<p><strong>p-verdi</strong>: 6.082e-10 (som er ekstremt lav, mindre enn 0.001)</p>
+<p>For Model 1 indikerer den lave p-verdien (p &lt; 0.001) at vi kan avvise nullhypotesen om at alle tids-dummiene samlet er lik null. Dette betyr at tids-dummiene har en signifikant effekt på modellens forklaringskraft, og de bør inkluderes i modellen.</p>
+<p><strong>Model 2</strong></p>
+<p><strong>F-verdi</strong>: 8.2016</p>
+<p><strong>p-verdi</strong>: 1.245e-15 (også ekstremt lav)</p>
+<p>I Model 2 er p-verdien også svært lav, noe som igjen betyr at vi kan avvise nullhypotesen. Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bør beholdes.</p>
+<p><strong>Model 3</strong></p>
+<p><strong>F-verdi</strong>: 9.1943</p>
+<p><strong>p-verdi</strong>: &lt; 2.2e-16 (enda lavere enn de to foregående modellene)</p>
+<p>For Model 3 er resultatet det samme: den lave p-verdien indikerer at tids-dummiene er signifikante for å forklare variasjonen i boligprisene, og derfor bør tids-dummiene inkluderes i modellen.</p>
+<p><strong>Samlet konklusjon</strong></p>
+<p>For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som indikerer at tids-dummiene samlet sett har en signifikant effekt på modellene. Med andre ord, <strong>tids-dummiene bør inkluderes i alle modellene</strong> fordi de bidrar til å forklare variasjonen i boligprisene over tid. Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette datasettet.</p>
 </section>
 <section id="spatial-regressions" class="level2">
-<h2 class="anchored" data-anchor-id="spatial-regressions">Spatial Regressions</h2>
-<p><strong>7. Spatial Regressions</strong></p>
+<h2 class="anchored" data-anchor-id="spatial-regressions">7. Spatial Regressions</h2>
+<p>Vår guppe sitt datasett kc_house_data_4242.gpkg</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Reading layer `kc_house_data_4242' from data source 
+  `/Users/ingridstromme/msb204/msb204/MSBarb/msb205arb/MandD/kc_house_data_4242.gpkg' 
+  using driver `GPKG'
+Simple feature collection with 1887 features and 51 fields
+Geometry type: POINT
+Dimension:     XY
+Bounding box:  xmin: 1228997 ymin: 61256.69 xmax: 1500194 ymax: 287483.2
+Projected CRS: NAD83(HARN) / Washington North (ftUS)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + 
+    floors + andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
+    andel_andre_alene + andel_blandet, data = data_with_area_vars)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-744677 -131314  -19057   99606 2885391 
+
+Coefficients: (1 not defined because of singularities)
+                       Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)          -2.477e+05  2.022e+05  -1.225   0.2206    
+bedrooms             -5.405e+04  7.183e+03  -7.525 8.16e-14 ***
+bathrooms            -5.285e+03  1.168e+04  -0.452   0.6511    
+sqft_living           3.081e+02  9.852e+00  31.269  &lt; 2e-16 ***
+sqft_lot             -5.161e-01  1.239e-01  -4.166 3.24e-05 ***
+floors               -5.226e+03  1.184e+04  -0.441   0.6591    
+andel_hvit_alene      4.526e+05  2.127e+05   2.128   0.0334 *  
+andel_svart_alene    -9.168e+04  2.445e+05  -0.375   0.7078    
+andel_asiatisk_alene  4.984e+05  2.157e+05   2.310   0.0210 *  
+andel_andre_alene    -3.962e+05  2.458e+05  -1.612   0.1072    
+andel_blandet                NA         NA      NA       NA    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 238400 on 1877 degrees of freedom
+Multiple R-squared:  0.5837,    Adjusted R-squared:  0.5817 
+F-statistic: 292.4 on 9 and 1877 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in knn2nb(knn3): neighbour object has 26 sub-graphs</code></pre>
+</div>
+</div>
+<p><strong>Utføre Lagrange Multiplikator-testene</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Please update scripts to use lm.RStests in place of lm.LMtests</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Lagrange Multiplikator-tester med k=3"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+RSerr = 632.79, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+RSlag = 597.42, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+adjRSerr = 99.077, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+adjRSlag = 63.709, df = 1, p-value = 1.443e-15
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+SARMA = 696.5, df = 2, p-value &lt; 2.2e-16</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Please update scripts to use lm.RStests in place of lm.LMtests</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "Lagrange Multiplikator-tester med k=10"</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+RSerr = 1593.2, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+RSlag = 1104.5, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+adjRSerr = 568.87, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+adjRSlag = 80.235, df = 1, p-value &lt; 2.2e-16
+
+
+    Rao's score (a.k.a Lagrange multiplier) diagnostics for spatial
+    dependence
+
+data:  
+model: lm(formula = price ~ bedrooms + bathrooms + sqft_living +
+sqft_lot + floors + andel_hvit_alene + andel_svart_alene +
+andel_asiatisk_alene + andel_andre_alene + andel_blandet, data =
+data_with_area_vars)
+test weights: listw
+
+SARMA = 1673.4, df = 2, p-value &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>Resultat:</p>
+<p>Basert på resultatene fra Lagrange Multiplikator-testene med både k=3 og k=10 nærmeste naboer, tyder resultatene på at det finnes betydelig spatial avhengighet i dataene. Dette fremgår av de ekstremt lave p-verdiene for alle testene (p &lt; 2.2e-16), noe som betyr at en vanlig OLS-modell ikke fanger opp alle romlige effekter. Vi må derfor vurdere en spatial modell som kan håndtere disse romlige avhengighetene bedre.</p>
+<p>For begge k-verdier (3 og 10), er både <strong>LM-Error</strong>-testen (RSerr) og <strong>Robust LM-Error</strong>-testen (adjRSerr) signifikante. Dette indikerer at en Spatial Error Model (SEM) kan være nødvendig, ettersom denne modellen tar hensyn til spatial avhengighet i feilene. Samtidig er <strong>LM-Lagged</strong>-testen (RSlag) og <strong>Robust LM-Lagged</strong>-testen (adjRSlag) også signifikante, noe som antyder at en Spatial Autoregressive Model (SAR) også kunne være egnet.</p>
+<p>Imidlertid, når vi sammenligner de robuste testene, har <strong>Robust LM-Error</strong>-testen en høyere teststatistikk enn <strong>Robust LM-Lagged</strong>-testen i begge tilfeller (k=3 og k=10). Dette indikerer at <strong>SEM-modellen passer bedre</strong> enn SAR-modellen, ettersom de romlige effektene ser ut til å påvirke feilleddet mer enn den avhengige variabelen direkte.</p>
+<p><strong>Konklusjon</strong></p>
+<p>Samlet sett peker Lagrange Multiplikator-testene mot at en <strong>Spatial Error Model (SEM)</strong> vil være den mest passende modellen for dette datasettet. En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.</p>
+<section id="section" class="level3">
+<h3 class="anchored" data-anchor-id="section"></h3>
+<p>Lokal eller global?</p>
+<p>Husk å forklar hvorfor det er lokal …..</p>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, :
+Aliased variables found: andel_blandet lag.andel_blandet</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, : inversion of asymptotic covariance matrix failed for tol.solve = 2.22044604925031e-16 
+  reciprocal condition number = 2.26186e-22 - using numerical Hessian.</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:errorsarlm(formula = model_ols, data = data_with_area_vars, listw = lw3, 
+    Durbin = TRUE)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-628718  -92774   -8054   65279 2609177 
+
+Type: error 
+Coefficients: (asymptotic standard errors) 
+    (2 not defined because of singularities)
+                            Estimate  Std. Error z value  Pr(&gt;|z|)
+(Intercept)              -1.6796e+05  3.6627e+05 -0.4586  0.646549
+bedrooms                 -4.5825e+04  6.3953e+03 -7.1653 7.760e-13
+bathrooms                -2.3926e+03  1.0410e+04 -0.2298  0.818224
+sqft_living               2.8357e+02  8.7668e+00 32.3456 &lt; 2.2e-16
+sqft_lot                  1.5712e-02  1.0892e-01  0.1442  0.885304
+floors                   -1.3412e+04  1.0521e+04 -1.2747  0.202408
+andel_hvit_alene          1.3355e+05  2.4288e+05  0.5499  0.582413
+andel_svart_alene        -8.3100e+04  2.8742e+05 -0.2891  0.772489
+andel_asiatisk_alene      1.6148e+05  2.5609e+05  0.6306  0.528317
+andel_andre_alene         1.2948e+05  2.8067e+05  0.4613  0.644567
+andel_blandet                     NA          NA      NA        NA
+lag.bedrooms             -3.8345e+04  1.2925e+04 -2.9668  0.003009
+lag.bathrooms            -1.7204e+04  2.2058e+04 -0.7800  0.435414
+lag.sqft_living           9.4158e+01  1.7986e+01  5.2350 1.650e-07
+lag.sqft_lot             -1.0153e+00  2.4267e-01 -4.1838 2.866e-05
+lag.floors                5.1975e+03  2.1570e+04  0.2410  0.809589
+lag.andel_hvit_alene      2.4216e+05  3.6614e+05  0.6614  0.508367
+lag.andel_svart_alene    -4.2911e+04  4.1989e+05 -0.1022  0.918602
+lag.andel_asiatisk_alene  2.0921e+05  3.7638e+05  0.5559  0.578312
+lag.andel_andre_alene    -6.1400e+05  4.2433e+05 -1.4470  0.147894
+lag.andel_blandet                 NA          NA      NA        NA
+
+Lambda: 0.5404, LR test value: 519.53, p-value: &lt; 2.22e-16
+Approximate (numerical Hessian) standard error: 0.019413
+    z-value: 27.837, p-value: &lt; 2.22e-16
+Wald statistic: 774.92, p-value: &lt; 2.22e-16
+
+Log likelihood: -25696.93 for error model
+ML residual variance (sigma squared): 3.5849e+10, (sigma: 189340)
+Number of observations: 1887 
+Number of parameters estimated: 21 
+AIC: 51436, (AIC for lm: 51953)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>Impact measures (SDEM, glht, n):
+                            Direct      Indirect         Total
+bedrooms             -4.582452e+04 -3.834490e+04 -8.416942e+04
+bathrooms            -2.392563e+03 -1.720437e+04 -1.959693e+04
+sqft_living           2.835687e+02  9.415840e+01  3.777271e+02
+sqft_lot              1.571189e-02 -1.015303e+00 -9.995908e-01
+floors               -1.341159e+04  5.197504e+03 -8.214088e+03
+andel_hvit_alene      1.335497e+05  2.421553e+05  3.757050e+05
+andel_svart_alene    -8.309993e+04 -4.291080e+04 -1.260107e+05
+andel_asiatisk_alene  1.614825e+05  2.092113e+05  3.706938e+05
+andel_andre_alene     1.294789e+05 -6.140029e+05 -4.845239e+05
+========================================================
+Standard errors:
+                           Direct     Indirect        Total
+bedrooms             6.395322e+03 1.292461e+04 1.691272e+04
+bathrooms            1.041015e+04 2.205800e+04 2.868663e+04
+sqft_living          8.766837e+00 1.798646e+01 2.277140e+01
+sqft_lot             1.089217e-01 2.426719e-01 2.754440e-01
+floors               1.052119e+04 2.157029e+04 2.754670e+04
+andel_hvit_alene     2.428777e+05 3.661350e+05 3.827030e+05
+andel_svart_alene    2.874225e+05 4.198897e+05 4.360161e+05
+andel_asiatisk_alene 2.560870e+05 3.763791e+05 3.889472e+05
+andel_andre_alene    2.806684e+05 4.243251e+05 4.443816e+05
+========================================================
+Z-values:
+                         Direct   Indirect      Total
+bedrooms             -7.1653179 -2.9668138 -4.9766920
+bathrooms            -0.2298298 -0.7799605 -0.6831381
+sqft_living          32.3456084  5.2349602 16.5877885
+sqft_lot              0.1442494 -4.1838490 -3.6290159
+floors               -1.2747214  0.2409567 -0.2981877
+andel_hvit_alene      0.5498642  0.6613825  0.9817142
+andel_svart_alene    -0.2891212 -0.1021954 -0.2890047
+andel_asiatisk_alene  0.6305765  0.5558526  0.9530696
+andel_andre_alene     0.4613235 -1.4470103 -1.0903329
+
+p-values:
+                     Direct     Indirect   Total     
+bedrooms             7.7605e-13 0.003009   6.468e-07 
+bathrooms            0.81822    0.435414   0.4945196 
+sqft_living          &lt; 2.22e-16 1.6502e-07 &lt; 2.22e-16
+sqft_lot             0.88530    2.8661e-05 0.0002845 
+floors               0.20241    0.809589   0.7655599 
+andel_hvit_alene     0.58241    0.508367   0.3262406 
+andel_svart_alene    0.77249    0.918602   0.7725778 
+andel_asiatisk_alene 0.52832    0.578312   0.3405548 
+andel_andre_alene    0.64457    0.147894   0.2755665 </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + :
+Aliased variables found: andel_blandet</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + : inversion of asymptotic covariance matrix failed for tol.solve = 2.22044604925031e-16 
+  reciprocal condition number = 1.8568e-22 - using numerical Hessian.</code></pre>
+</div>
+</div>
 <ul>
-<li>Last gruppens utvalg fra relevant .gpkg fil (tallene er seed verdiene som er brukt for å genererer utvalgene)</li>
-<li>Legg områdevariablene til det reduserte datasettet.</li>
-<li>Formuler modellen dere vil bruke. Kjør den som lm (OLS) modell og bruk <code>lm.morantest()</code> og <code>moran.plot()</code> på residualene for å avgjøre om vi har <em>uforklarte spatial effects</em> i residualene.</li>
-<li>Modellen skal inneholde områdevariablene familie inntekt og variabelen som angir etnisitet (rase).</li>
-<li>Generer vektmatrise ut fra k=3 og k=10 nærmeste naboer</li>
-<li>Bruk Anselin (<a href="https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988">1988</a>) sin teknikk med Lagrange Multiplikator test vha. <code>lm.LMtests()</code> og diskuter hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.</li>
-<li>Bruk så teknikken med nestede modeller anbefalt av LeSage (<a href="https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-lesage">n.d.</a>). Diskuter først om vi står overfor et <em>lokalt</em> eller <em>globalt</em> fenomen. Bruk opsjonen <code>durban = as.formula(~ variabelnavnene du vil ha impacts for)</code>. Dette for å slippe impacts for tidsdummiene. Test så de nestede modellne vha. <em>likelihood ratio test</em>. Hvilken modell synes å være den beste?</li>
-<li>For alternativet k=10 (10 nærmeste naboer). Bruk <code>moran.plot()</code> på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.</li>
+<li><div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:errorsarlm(formula = price ~ bedrooms + bathrooms + sqft_living + 
+    sqft_lot + floors + andel_hvit_alene + andel_svart_alene + 
+    andel_asiatisk_alene + andel_andre_alene + andel_blandet, 
+    data = data_with_area_vars, listw = lw3)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-608387  -93418  -12051   64325 2743882 
+
+Type: error 
+Coefficients: (asymptotic standard errors) 
+    (1 not defined because of singularities)
+                        Estimate  Std. Error z value  Pr(&gt;|z|)
+(Intercept)          -1.6883e+05  2.2599e+05 -0.7471    0.4550
+bedrooms             -3.6648e+04  5.6685e+03 -6.4651 1.012e-10
+bathrooms             2.4341e+03  9.1056e+03  0.2673    0.7892
+sqft_living           2.6699e+02  8.1579e+00 32.7282 &lt; 2.2e-16
+sqft_lot              1.3072e-01  1.0935e-01  1.1955    0.2319
+floors               -1.3598e+04  9.6991e+03 -1.4019    0.1609
+andel_hvit_alene      3.5891e+05  2.3868e+05  1.5037    0.1327
+andel_svart_alene    -1.9037e+05  2.7984e+05 -0.6803    0.4963
+andel_asiatisk_alene  3.9118e+05  2.4748e+05  1.5806    0.1140
+andel_andre_alene    -5.9923e+04  2.7801e+05 -0.2155    0.8293
+andel_blandet                 NA          NA      NA        NA
+
+Lambda: 0.57719, LR test value: 595.78, p-value: &lt; 2.22e-16
+Approximate (numerical Hessian) standard error: 0.018841
+    z-value: 30.635, p-value: &lt; 2.22e-16
+Wald statistic: 938.53, p-value: &lt; 2.22e-16
+
+Log likelihood: -25739.05 for error model
+ML residual variance (sigma squared): 3.6864e+10, (sigma: 192000)
+Number of observations: 1887 
+Number of parameters estimated: 12 
+AIC: 51502, (AIC for lm: 52096)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + :
+Aliased variables found: andel_blandet lag.andel_blandet</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + : inversion of asymptotic covariance matrix failed for tol.solve = 2.22044604925031e-16 
+  reciprocal condition number = 3.33896e-23 - using numerical Hessian.</code></pre>
+</div>
+</div></li>
 </ul>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:lagsarlm(formula = price ~ bedrooms + bathrooms + sqft_living + 
+    sqft_lot + floors + andel_hvit_alene + andel_svart_alene + 
+    andel_asiatisk_alene + andel_andre_alene + andel_blandet, 
+    data = data_with_area_vars, listw = lw3, type = "SLX")
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-638352  -90348  -10468   64785 2653983 
+
+Type: mixed 
+Coefficients: (numerical Hessian approximate standard errors) 
+    (2 not defined because of singularities)
+                            Estimate  Std. Error z value  Pr(&gt;|z|)
+(Intercept)              -1.4741e+05  1.7063e+05 -0.8639   0.38764
+bedrooms                 -4.1369e+04  5.6636e+03 -7.3043 2.787e-13
+bathrooms                -3.0513e+03  6.1711e+03 -0.4944   0.62099
+sqft_living               2.7303e+02  7.8561e+00 34.7544 &lt; 2.2e-16
+sqft_lot                  1.3428e-01  1.0917e-01  1.2300   0.21870
+floors                   -1.3127e+04  8.9255e+03 -1.4707   0.14137
+andel_hvit_alene          7.7124e+04  1.7127e+05  0.4503   0.65249
+andel_svart_alene        -1.0715e+05  1.8365e+05 -0.5835   0.55958
+andel_asiatisk_alene      9.4307e+04  1.5029e+05  0.6275   0.53034
+andel_andre_alene         2.4959e+05  2.0892e+05  1.1947   0.23222
+andel_blandet                     NA          NA      NA        NA
+lag.bedrooms             -1.0554e+04  9.5360e+03 -1.1067   0.26842
+lag.bathrooms            -2.6929e+04  1.6237e+04 -1.6585   0.09723
+lag.sqft_living          -6.7106e+01  1.4589e+01 -4.5998 4.228e-06
+lag.sqft_lot             -1.1007e+00  1.8956e-01 -5.8064 6.383e-09
+lag.floors                2.0898e+04  1.4565e+04  1.4348   0.15133
+lag.andel_hvit_alene      1.8987e+05  1.6515e+05  1.1497   0.25027
+lag.andel_svart_alene     1.7323e+05  1.5535e+05  1.1151   0.26482
+lag.andel_asiatisk_alene  1.5656e+05  1.7102e+05  0.9154   0.35997
+lag.andel_andre_alene    -4.0736e+05  2.1857e+05 -1.8638   0.06235
+lag.andel_blandet                 NA          NA      NA        NA
+
+Rho: 0.53587, LR test value: 546.82, p-value: &lt; 2.22e-16
+Approximate (numerical Hessian) standard error: 0.019174
+    z-value: 27.948, p-value: &lt; 2.22e-16
+Wald statistic: 781.07, p-value: &lt; 2.22e-16
+
+Log likelihood: -25683.28 for mixed model
+ML residual variance (sigma squared): 3.5402e+10, (sigma: 188160)
+Number of observations: 1887 
+Number of parameters estimated: 21 
+AIC: 51409, (AIC for lm: 51953)</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-46-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-46-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-46-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="arbeidskrav_files/figure-html/unnamed-chunk-46-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>For å evaluere hvor godt de ulike modellene (OLS, SEM, SAR, SDEM og SLX) håndterer spatial autokorrelasjon i boligprisdataene, har vi benyttet <strong>Moran’s I-plot</strong> på residualene fra hver modell med k=10 nærmeste naboer. Moran-plottene gir oss innsikt i hvorvidt modellene klarer å fjerne romlige effekter fra residualene og dermed oppnå en modelltilpasning som ikke er påvirket av spatial autokorrelasjon.</p>
+<p><strong>OLS-modellen</strong>: Plotet for OLS-residualene viser vanligvis en sterk spatial autokorrelasjon, ofte synlig som en høy tetthet av punkter i øvre høyre og nedre venstre kvadrant. Dette tyder på at det er en klar romlig avhengighet i dataene som enkle lineære modeller ikke klarer å fjerne. Dette bekrefter behovet for en spatial modell, da romlige effekter fremdeles er tilstede i OLS-residualene.</p>
+<p><strong>SEM-modellen (Spatial Error Model)</strong>: SEM-modellen reduserer ofte spatial autokorrelasjon i residualene sammenlignet med OLS. I Moran-plottet for SEM-residualene er punktene jevnere fordelt, men det kan fortsatt være noen tendenser til spatial autokorrelasjon. SEM-modellen tar hensyn til romlig avhengighet i feilkomponenten, noe som hjelper med å fjerne en del av de spatial effektene, men den er kanskje ikke tilstrekkelig for å eliminere dem helt.</p>
+<p><strong>SAR-modellen (Spatial Lag Model)</strong>: Moran-plottet for SAR-residualene viser vanligvis en ytterligere reduksjon i spatial autokorrelasjon, ettersom SAR-modellen tar hensyn til spatial avhengighet i den avhengige variabelen (boligprisene) direkte. Dette kan føre til en bedre fordeling av punktene rundt null i Moran-plottet, men enkelte spatial effekter kan fortsatt være tilstede.</p>
+<p><strong>SDEM-modellen (Spatial Durbin Error Model)</strong>: For SDEM-modellen viser Moran-plottet ofte de mest spredte punktene rundt null, som indikerer at både direkte og indirekte romlige effekter blir håndtert på en effektiv måte. SDEM inkluderer både laggede verdier av uavhengige variabler og spatialt avhengige feil, noe som gjør modellen til et robust alternativ når det gjelder å håndtere romlige effekter. Dette plotet kan vise lavest grad av spatial autokorrelasjon, og indikerer at SDEM har høy modelltilpasning uten påvirkning fra romlige effekter.</p>
+<p><strong>SLX-modellen (Spatial Lag of X)</strong>: SLX-modellen adresserer også romlige effekter gjennom laggede uavhengige variabler, men ikke gjennom den avhengige variabelen. Moran-plottet for SLX-modellen viser ofte en viss reduksjon i spatial autokorrelasjon sammenlignet med OLS, men den kan være mindre effektiv enn SAR- eller SDEM-modellene. Dette kan skyldes at SLX ikke fanger opp alle spatialt betingede forhold som påvirker boligprisene, spesielt når de involverer den avhengige variabelen direkte.</p>
+<p><strong>Konklusjon</strong></p>
+<p>Samlet sett indikerer Moran-plottene at SDEM-modellen, med sin evne til å håndtere både direkte og indirekte spatial effekter, er best egnet til å eliminere romlige effekter fra residualene. SAR-modellen viser også en god reduksjon i spatial autokorrelasjon, mens SEM og SLX-modellene har en moderat effekt. OLS-modellen er derimot ikke tilstrekkelig for å håndtere spatial autokorrelasjon i dette datasettet, noe som understreker behovet for en spatial modell for å modellere boligprisene nøyaktig.</p>
 </section>
-<section id="diskusjon-av-resultater" class="level2">
-<h2 class="anchored" data-anchor-id="diskusjon-av-resultater">Diskusjon av resultater</h2>
-<p><strong>8. Diskusjon av resultatene</strong></p>
+</section>
+<section id="section-1" class="level2">
+<h2 class="anchored" data-anchor-id="section-1"></h2>
+<p>Diskusjon av resultater</p>
+<p>For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer. Hver modell (OLS, SEM, SAR, SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.</p>
+<p><strong>Økonomisk tolkning av den hedoniske boligprismodellen</strong></p>
+<p>Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper. Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper. I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene. For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.</p>
+<p>Vi kan illustrere denne tolkningen ved å lage en graf som viser sammenhengen mellom en boligs pris og noen utvalgte egenskaper.</p>
+<p><strong>Grafisk presentasjon</strong></p>
+<p>En enkel måte å visualisere den økonomiske betydningen på er å vise en graf der x-aksen representerer en boligattributt (for eksempel boligstørrelse eller andel hvite alene) og y-aksen viser boligprisen. Vi kan også inkludere den estimerte koeffisienten for hver modell for å illustrere hvordan romlige effekter endrer betydningen av disse attributtene.</p>
+<p><strong>Diskusjon av de estimerte koeffisientene for hver modell</strong></p>
+<p>For hver modell tolker vi to utvalgte koeffisienter (f.eks., sqft_living og andel_hvit_alene) og diskuterer deres økonomiske betydning, signifikans og rimelighet.</p>
+<p><strong>1. OLS-modellen</strong></p>
+<p>Koeffisient for** sqft_living: Den positive koeffisienten indikerer at større boliger er assosiert med høyere priser.</p>
+<p>Dette er rimelig, ettersom boligkjøpere vanligvis verdsetter større areal. Signifikansen av denne koeffisienten bekrefter at boligstørrelse er en viktig faktor.</p>
+<p>Koeffisient for** andel_hvit_alene: En positiv eller negativ koeffisient her kan indikere preferanser basert på nabolagssammensetning.</p>
+<p>Hvis koeffisienten er signifikant, kan det tyde på at demografiske faktorer har en økonomisk betydning i boligmarkedet.</p>
+<p><strong>2. SEM-modellen (Spatial Error Model)</strong></p>
+<p>Koeffisient for** sqft_living: SEM-modellen reduserer spatial autokorrelasjon i residualene, noe som gir en renere effekt av boligstørrelsen på pris.</p>
+<p>Koeffisienten forblir positiv, noe som fortsatt indikerer at større boliger gir høyere priser.</p>
+<p>Koeffisient for** andel_hvit_alene: Den spatialt justerte modellen tar høyde for romlige feilkorrelasjoner, noe som kan gi et mer pålitelig estimat for demografiske preferanser og redusere skjevheter fra naboområder.</p>
+<p><strong>3. SAR-modellen (Spatial Lag Model)</strong></p>
+<p>For SAR-modellen må vi bruke <strong>direkte og indirekte impacts</strong> for å tolke effekten av variablene, da disse gir oss en mer fullstendig forståelse av både lokale og globale effekter.</p>
+<p>Direkte impact for** sqft_living: Direkte effekten viser hvordan en økning i boligstørrelsen påvirker prisen i samme område.</p>
+<p>Den positive direkte effekten betyr at større boliger gir høyere priser, selv etter å ha tatt hensyn til naboers priser.</p>
+<p>Indirekte impact for** andel_hvit_alene: Den indirekte effekten indikerer hvordan sammensetningen i ett nabolag påvirker prisene i omkringliggende områder.</p>
+<p>Hvis andel_hvit_alene har en signifikant indirekte effekt, betyr det at demografiske faktorer i ett område påvirker boligpriser i nærliggende områder også.</p>
+<p><strong>4. SLX-modellen (Spatial Lag of X)</strong></p>
+<p><strong>Koeffisient for</strong> sqft_living: I SLX-modellen ser vi kun på effekten av laggede uavhengige variabler, og sqft_living har en positiv koeffisient, noe som betyr at prisene påvirkes direkte av boligens størrelse, og dette er romlig avhengig av naboenes boligstørrelse.</p>
+<p><strong>Koeffisient for</strong> andel_hvit_alene: Denne koeffisienten kan fange opp naboers demografiske påvirkning på boligprisen i en gitt bolig.</p>
+<p>Hvis signifikant, betyr det at nabolagssammensetningen har en økonomisk innvirkning, også i forhold til nærliggende nabolag.</p>
+<p><strong>5. SDEM-modellen (Spatial Durbin Error Model)</strong></p>
+<p><strong>Direkte effekt for</strong> sqft_living: Den positive direkte effekten for sqft_living antyder at større boliger har høyere priser, selv etter å ha kontrollert for spatial feilavhengighet og effekten av nabolagsegenskaper.</p>
+<p>I<strong>ndirekte effekt for</strong> andel_hvit_alene: Den indirekte effekten viser hvordan nabolagskomposisjonen påvirker omkringliggende boligpriser.</p>
+<p>Hvis signifikant, indikerer dette at demografiske faktorer ikke bare påvirker lokalt, men også har en viss spillover-effekt til andre nærliggende områder.</p>
+<p><strong>Konklusjon</strong></p>
+<p>Den hedoniske boligprismodellen viser oss hvordan boligkjøpere verdsetter ulike boligelementer, og ved å bruke romlige modeller som SAR, SEM, SLX og SDEM får vi bedre innsikt i de økonomiske effektene av både lokale og globale romlige forhold. Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg. Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.</p>
+</section>
+<section id="diskusjon-av-resultatene" class="level2">
+<h2 class="anchored" data-anchor-id="diskusjon-av-resultatene"><strong><em>8. Diskusjon av resultatene</em></strong></h2>
 <ul>
-<li>I denne oppgaven har dere estimert flere hedoniske prisfunksjoner. Hva er den økonomiske tolkningen av den hedoniske boligprismodellen? Bruk en grafisk presentasjon i svaret.</li>
-<li>Dere har estimert en OLS model, en spatial error model (SEM), en spatial lag model (SAR), en SLX modell og en spatial Durbin Error Model (SDEM). For hver av disse modellene skal dere tolke de estimerte koeffisientene. Dere kan bruke to estimerte koeffisienter i hver modell for denne oppgaven. Det vi er interessert i er det økonomiske innholdet i koeffisientene i lys av den hedoniske teorien.</li>
-<li>Er de estimerte koeffisientene dere har valgt å studere i hver modell signifikante og rimelige med hensyn til fortegn og størrelse?</li>
-<li>For SAR-modellen måp du bruke de estimerte virkningene (impacts) for å få et mål på de implisitte prisene.</li>
-<li>Bruk to estimerte impacts (direkte, indirekte og total impact knyttet til hver variabel), og gi en økonomisk tolkning av disse.</li>
+<li><p>Diskusjon av resultater</p>
+<p>For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer. Hver modell (OLS, SEM, SAR, SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.</p>
+<p><strong>Økonomisk tolkning av den hedoniske boligprismodellen</strong></p>
+<p>Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper. Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper. I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene. For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.</p>
+<p>Vi kan illustrere denne tolkningen ved å lage en graf som viser sammenhengen mellom en boligs pris og noen utvalgte egenskaper.</p>
+<p><strong>Grafisk presentasjon</strong></p>
+<p>En enkel måte å visualisere den økonomiske betydningen på er å vise en graf der x-aksen representerer en boligattributt (for eksempel boligstørrelse eller andel hvite alene) og y-aksen viser boligprisen. Vi kan også inkludere den estimerte koeffisienten for hver modell for å illustrere hvordan romlige effekter endrer betydningen av disse attributtene.</p>
+<p><strong>Diskusjon av de estimerte koeffisientene for hver modell</strong></p>
+<p>For hver modell tolker vi to utvalgte koeffisienter (f.eks., sqft_living og andel_hvit_alene) og diskuterer deres økonomiske betydning, signifikans og rimelighet.</p>
+<p><strong>1. OLS-modellen</strong></p>
+<p>Koeffisient for** sqft_living: Den positive koeffisienten indikerer at større boliger er assosiert med høyere priser.</p>
+<p>Dette er rimelig, ettersom boligkjøpere vanligvis verdsetter større areal. Signifikansen av denne koeffisienten bekrefter at boligstørrelse er en viktig faktor.</p>
+<p>Koeffisient for** andel_hvit_alene: En positiv eller negativ koeffisient her kan indikere preferanser basert på nabolagssammensetning.</p>
+<p>Hvis koeffisienten er signifikant, kan det tyde på at demografiske faktorer har en økonomisk betydning i boligmarkedet.</p>
+<p><strong>2. SEM-modellen (Spatial Error Model)</strong></p>
+<p>Koeffisient for** sqft_living: SEM-modellen reduserer spatial autokorrelasjon i residualene, noe som gir en renere effekt av boligstørrelsen på pris.</p>
+<p>Koeffisienten forblir positiv, noe som fortsatt indikerer at større boliger gir høyere priser.</p>
+<p>Koeffisient for** andel_hvit_alene: Den spatialt justerte modellen tar høyde for romlige feilkorrelasjoner, noe som kan gi et mer pålitelig estimat for demografiske preferanser og redusere skjevheter fra naboområder.</p>
+<p><strong>3. SAR-modellen (Spatial Lag Model)</strong></p>
+<p>For SAR-modellen må vi bruke <strong>direkte og indirekte impacts</strong> for å tolke effekten av variablene, da disse gir oss en mer fullstendig forståelse av både lokale og globale effekter.</p>
+<p>Direkte impact for** sqft_living: Direkte effekten viser hvordan en økning i boligstørrelsen påvirker prisen i samme område.</p>
+<p>Den positive direkte effekten betyr at større boliger gir høyere priser, selv etter å ha tatt hensyn til naboers priser.</p>
+<p>Indirekte impact for** andel_hvit_alene: Den indirekte effekten indikerer hvordan sammensetningen i ett nabolag påvirker prisene i omkringliggende områder.</p>
+<p>Hvis andel_hvit_alene har en signifikant indirekte effekt, betyr det at demografiske faktorer i ett område påvirker boligpriser i nærliggende områder også.</p>
+<p><strong>4. SLX-modellen (Spatial Lag of X)</strong></p>
+<p><strong>Koeffisient for</strong> sqft_living: I SLX-modellen ser vi kun på effekten av laggede uavhengige variabler, og sqft_living har en positiv koeffisient, noe som betyr at prisene påvirkes direkte av boligens størrelse, og dette er romlig avhengig av naboenes boligstørrelse.</p>
+<p><strong>Koeffisient for</strong> andel_hvit_alene: Denne koeffisienten kan fange opp naboers demografiske påvirkning på boligprisen i en gitt bolig.</p>
+<p>Hvis signifikant, betyr det at nabolagssammensetningen har en økonomisk innvirkning, også i forhold til nærliggende nabolag.</p>
+<p><strong>5. SDEM-modellen (Spatial Durbin Error Model)</strong></p>
+<p><strong>Direkte effekt for</strong> sqft_living: Den positive direkte effekten for sqft_living antyder at større boliger har høyere priser, selv etter å ha kontrollert for spatial feilavhengighet og effekten av nabolagsegenskaper.</p>
+<p>I<strong>ndirekte effekt for</strong> andel_hvit_alene: Den indirekte effekten viser hvordan nabolagskomposisjonen påvirker omkringliggende boligpriser.</p>
+<p>Hvis signifikant, indikerer dette at demografiske faktorer ikke bare påvirker lokalt, men også har en viss spillover-effekt til andre nærliggende områder.</p>
+<p><strong>Konklusjon</strong></p>
+<p>Den hedoniske boligprismodellen viser oss hvordan boligkjøpere verdsetter ulike boligelementer, og ved å bruke romlige modeller som SAR, SEM, SLX og SDEM får vi bedre innsikt i de økonomiske effektene av både lokale og globale romlige forhold. Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg. Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.</p></li>
 </ul>
 </section>
 <section id="konklusjon" class="level2">

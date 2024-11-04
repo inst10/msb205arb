@@ -559,13 +559,15 @@ Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette dat
 
 ## 7. Spatial Regressions
 
-Vår guppe sitt datasett kc_house_data_4242.gpkg
+Vår guppe sitt datasett kc_house_data_4242.gpkg, laster det ned.
 
 ```{r}
 #| echo: false
 #| output: false
 data <- st_read("MandD/kc_house_data_4242.gpkg")
 ```
+
+Legger til områdevariablene til det reduserte datasettet
 
 ```{r}
 #| echo: false
@@ -580,6 +582,8 @@ tracts10_selected <- tracts10 %>% select(andel_hvit_alene, andel_svart_alene, an
 data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
 ```
 
+Modellen vi vil bruke:
+
 ```{r}
 #| echo: false
 # Kjøre en lineær modell (OLS) med områdevariabler
@@ -590,14 +594,12 @@ model_ols <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 summary(model_ols)
 ```
 
-Kommentar til OLS modellen: **Koeffisienter**
+Kommentar til OLS modellen:
 
-• **Intercept**: Konstantleddet (-247,700) er ikke signifikant (p = 0.2206), så den kan ikke tolkes som meningsfull.
+**Koeffisienter,** kun tatt med de vi tenker er relevante
 
 • **Bedrooms**: Koeffisienten for antall soverom (-54,050) er signifikant (p \< 0.001) og negativ.
 Dette kan virke kontraintuitivt, men det kan være et tegn på at større boliger med flere soverom har andre karakteristikker som påvirker prisen (som mindre stuer eller eldre boliger).
-
-• **Bathrooms**: Koeffisienten (-5,285) er ikke signifikant (p = 0.651), så antall bad ser ikke ut til å ha noen klar effekt på prisen i denne modellen.
 
 • **Sqft_living**: Størrelsen på boligen (kvadratfot boareal) har en sterk positiv og signifikant effekt på pris (β = 308.1, p \< 0.001).
 Dette er forventet, ettersom større boliger vanligvis er dyrere.
@@ -605,17 +607,9 @@ Dette er forventet, ettersom større boliger vanligvis er dyrere.
 **Sqft_lot:** Størrelsen på tomten har en liten, men signifikant negativ effekt på prisen (β = -0.5161, p \< 0.001).
 Dette kan tyde på at større tomter ikke nødvendigvis øker prisen, kanskje fordi andre faktorer som beliggenhet veier tyngre.
 
-**Floors :** Antall etasjer har ingen signifikant effekt på prisen (p = 0.659), noe som tyder på at dette ikke er en viktig prisdriver i denne modellen.
-
 **Andel hvit alene**: Denne variabelen er positiv og signifikant (β = 452,600, p = 0.033), noe som indikerer at i områder hvor en større andel av befolkningen er hvit alene, har boliger en tendens til å ha høyere priser.
 
-**Andel svart alene**: Koeffisienten (-91,680) er ikke signifikant (p = 0.707), så det ser ikke ut til at denne variabelen har en klar effekt på prisene.
-
 **Andel asiatisk alene**: Denne variabelen har en positiv og signifikant effekt (β = 498,400, p = 0.021), noe som indikerer høyere boligpriser i områder med større andel av asiatisk befolkning.
-
-**Andel andre alene**: Denne koeffisienten (-396,200) er ikke signifikant (p = 0.107), men trenden ser ut til å være negativ, noe som antyder at det kan være en svak sammenheng mellom denne variabelen og lavere boligpriser.
-
-**Andel blandet**: Denne variabelen ble ikke estimert på grunn av “singularities,” som kan skyldes at det er perfekt korrelasjon mellom denne variabelen og andre i modellen.
 
 **Modellens forklaringskraft:**
 
@@ -627,9 +621,11 @@ Dette er en moderat god forklaringskraft for en slik modell, men det er fortsatt
 **Samlet vurdering:**
 
 Modellen gir rimelig gode forklaringer på hvordan noen boligkarakteristikker og demografiske variabler påvirker prisene, men det er klart at ikke alle variablene er like viktige.
-Kvadratfot boareal er den sterkeste driveren av boligprisene, mens variabler som antall etasjer og bad ikke ser ut til å spille en stor rolle.
+**Sqft_living** er den sterkeste driveren av boligprisene, mens variabler som antall etasjer og bad ikke ser ut til å spille en stor rolle.
 De demografiske variablene gir noen interessante funn, spesielt effekten av andel hvit alene og andel asiatisk alene, som begge er positive og signifikante.
 Dette kan gi innsikt i hvordan befolkningssammensetningen i områder kan påvirke boligprisene.
+
+**Videre generer vi vektmatrise ut fra k=3 og k=10 nærmeste naboer**
 
 ```{r}
 #| echo: false
@@ -647,7 +643,7 @@ lw3 <- nb2listw(nb3, style = "W")
 lw10 <- nb2listw(nb10, style = "W")
 ```
 
-**Utføre Lagrange Multiplikator-testene**
+**Utfører Lagrange Multiplikator-testene**
 
 ```{r}
 #| echo: false
@@ -685,7 +681,7 @@ En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å mo
 
 ### 
 
-**Lokal eller global?**
+**Lokalt eller globalt fenomen?**
 
 Siden testene viser betydelig spatial avhengighet på både lokale og større skalaer (k=3 og k=10 nærmeste naboer), og SEM-modellen (Spatial Error Model) er identifisert som den mest passende for å fange opp disse effektene, peker dette tydelig mot et globalt fenomen.
 Med andre ord, de romlige effektene påvirker boligprisene på et bredt geografisk nivå, noe som indikerer at boligprisene i et område ikke bare påvirkes av umiddelbare naboboliger, men av strukturer og forhold som strekker seg over hele regionen.
@@ -784,8 +780,7 @@ moran.plot(residuals_slx, listw = lw10, main = "Moran's I for SLX-residualer (k=
 For å evaluere hvor godt de ulike modellene (OLS, SEM, SAR, SDEM og SLX) håndterer spatial autokorrelasjon i boligprisdataene, har vi benyttet **Moran’s I-plot** på residualene fra hver modell med k=10 nærmeste naboer.
 Moran-plottene gir oss innsikt i hvorvidt modellene klarer å fjerne romlige effekter fra residualene og dermed oppnå en modelltilpasning som ikke er påvirket av spatial autokorrelasjon.
 
-**OLS-modellen**:
-Moran-plot for OLS-residualene viser tydelig spatial autokorrelasjon.
+**OLS-modellen**: Moran-plot for OLS-residualene viser tydelig spatial autokorrelasjon.
 Punktene i plottet er sterkt gruppert, spesielt rundt første og tredje kvadrant, som indikerer positiv romlig korrelasjon mellom residualene.
 Dette antyder at OLS-modellen ikke håndterer den romlige avhengigheten, noe som resulterer i at romlig strukturerte feil fortsatt er til stede.
 Den stigende linjen i plottet bekrefter at det er en romlig sammenheng mellom residualene, som indikerer behov for en modell som kan håndtere denne romlige avhengigheten.

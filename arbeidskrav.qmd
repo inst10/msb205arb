@@ -588,33 +588,32 @@ model_ols <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 summary(model_ols)
 ```
 
-Kommentar til OLS modellen:
-**Koeffisienter:**
+Kommentar til OLS modellen: **Koeffisienter**
 
-	•	**Intercept**: Konstantleddet (-247,700) er ikke signifikant (p = 0.2206), så den kan ikke tolkes som meningsfull.
+• **Intercept**: Konstantleddet (-247,700) er ikke signifikant (p = 0.2206), så den kan ikke tolkes som meningsfull.
 
-	•	**Bedrooms**: Koeffisienten for antall soverom (-54,050) er signifikant (p \< 0.001) og negativ.
+• **Bedrooms**: Koeffisienten for antall soverom (-54,050) er signifikant (p \< 0.001) og negativ.
 Dette kan virke kontraintuitivt, men det kan være et tegn på at større boliger med flere soverom har andre karakteristikker som påvirker prisen (som mindre stuer eller eldre boliger).
 
-	•	**Bathrooms**: Koeffisienten (-5,285) er ikke signifikant (p = 0.651), så antall bad ser ikke ut til å ha noen klar effekt på prisen i denne modellen.
+• **Bathrooms**: Koeffisienten (-5,285) er ikke signifikant (p = 0.651), så antall bad ser ikke ut til å ha noen klar effekt på prisen i denne modellen.
 
-	•	**Sqft_living**: Størrelsen på boligen (kvadratfot boareal) har en sterk positiv og signifikant effekt på pris (β = 308.1, p \< 0.001).
+• **Sqft_living**: Størrelsen på boligen (kvadratfot boareal) har en sterk positiv og signifikant effekt på pris (β = 308.1, p \< 0.001).
 Dette er forventet, ettersom større boliger vanligvis er dyrere.
 
-	•	**Sqft_lot**: Størrelsen på tomten har en liten, men signifikant negativ effekt på prisen (β = -0.5161, p \< 0.001).
+**Sqft_lot:** Størrelsen på tomten har en liten, men signifikant negativ effekt på prisen (β = -0.5161, p \< 0.001).
 Dette kan tyde på at større tomter ikke nødvendigvis øker prisen, kanskje fordi andre faktorer som beliggenhet veier tyngre.
 
-	•	**Floors**: Antall etasjer har ingen signifikant effekt på prisen (p = 0.659), noe som tyder på at dette ikke er en viktig prisdriver i denne modellen.
+**Floors :** Antall etasjer har ingen signifikant effekt på prisen (p = 0.659), noe som tyder på at dette ikke er en viktig prisdriver i denne modellen.
 
-	•	**Andel hvit alene**: Denne variabelen er positiv og signifikant (β = 452,600, p = 0.033), noe som indikerer at i områder hvor en større andel av befolkningen er hvit alene, har boliger en tendens til å ha høyere priser.
+**Andel hvit alene**: Denne variabelen er positiv og signifikant (β = 452,600, p = 0.033), noe som indikerer at i områder hvor en større andel av befolkningen er hvit alene, har boliger en tendens til å ha høyere priser.
 
-	•	**Andel svart alene**: Koeffisienten (-91,680) er ikke signifikant (p = 0.707), så det ser ikke ut til at denne variabelen har en klar effekt på prisene.
+**Andel svart alene**: Koeffisienten (-91,680) er ikke signifikant (p = 0.707), så det ser ikke ut til at denne variabelen har en klar effekt på prisene.
 
-	•	**Andel asiatisk alene**: Denne variabelen har en positiv og signifikant effekt (β = 498,400, p = 0.021), noe som indikerer høyere boligpriser i områder med større andel av asiatisk befolkning.
+**Andel asiatisk alene**: Denne variabelen har en positiv og signifikant effekt (β = 498,400, p = 0.021), noe som indikerer høyere boligpriser i områder med større andel av asiatisk befolkning.
 
-	•	**Andel andre alene**: Denne koeffisienten (-396,200) er ikke signifikant (p = 0.107), men trenden ser ut til å være negativ, noe som antyder at det kan være en svak sammenheng mellom denne variabelen og lavere boligpriser.
+**Andel andre alene**: Denne koeffisienten (-396,200) er ikke signifikant (p = 0.107), men trenden ser ut til å være negativ, noe som antyder at det kan være en svak sammenheng mellom denne variabelen og lavere boligpriser.
 
-	•	**Andel blandet**: Denne variabelen ble ikke estimert på grunn av “singularities,” som kan skyldes at det er perfekt korrelasjon mellom denne variabelen og andre i modellen.
+**Andel blandet**: Denne variabelen ble ikke estimert på grunn av “singularities,” som kan skyldes at det er perfekt korrelasjon mellom denne variabelen og andre i modellen.
 
 **Modellens forklaringskraft:**
 
@@ -683,9 +682,14 @@ En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å mo
 
 ### 
 
-Lokal eller global?
+**Lokal eller global?**
 
-Husk å forklar hvorfor det er lokal .....
+Siden testene viser betydelig spatial avhengighet på både lokale og større skalaer (k=3 og k=10 nærmeste naboer), og SEM-modellen (Spatial Error Model) er identifisert som den mest passende for å fange opp disse effektene, peker dette tydelig mot et globalt fenomen.
+Med andre ord, de romlige effektene påvirker boligprisene på et bredt geografisk nivå, noe som indikerer at boligprisene i et område ikke bare påvirkes av umiddelbare naboboliger, men av strukturer og forhold som strekker seg over hele regionen.
+
+SEM-modellen fanger opp den romlige avhengigheten som eksisterer i feilleddet, noe som antyder at det er underliggende faktorer som påvirker boligprisene i store deler av området, faktorer som ikke nødvendigvis direkte påvirker den avhengige variabelen (boligprisene), men som likevel skaper et romlig mønster.
+Dette kan inkludere bredere økonomiske forhold, sosioøkonomiske mønstre, eller infrastrukturelle påvirkninger som fanges opp i feilleddet.
+Det globale aspektet understrekes av det faktum at spatial avhengighet observeres både blant nærmeste naboer og over større avstander (k=10), noe som bekrefter at romlige effekter har en vidstrakt innvirkning på boligmarkedet.
 
 ```{r}
 #| echo: false
@@ -769,32 +773,39 @@ moran.plot(residuals_slx, listw = lw10, main = "Moran's I for SLX-residualer (k=
 For å evaluere hvor godt de ulike modellene (OLS, SEM, SAR, SDEM og SLX) håndterer spatial autokorrelasjon i boligprisdataene, har vi benyttet **Moran’s I-plot** på residualene fra hver modell med k=10 nærmeste naboer.
 Moran-plottene gir oss innsikt i hvorvidt modellene klarer å fjerne romlige effekter fra residualene og dermed oppnå en modelltilpasning som ikke er påvirket av spatial autokorrelasjon.
 
-**OLS-modellen**: Plotet for OLS-residualene viser vanligvis en sterk spatial autokorrelasjon, ofte synlig som en høy tetthet av punkter i øvre høyre og nedre venstre kvadrant.
-Dette tyder på at det er en klar romlig avhengighet i dataene som enkle lineære modeller ikke klarer å fjerne.
-Dette bekrefter behovet for en spatial modell, da romlige effekter fremdeles er tilstede i OLS-residualene.
+**OLS-modellen**:
+Moran-plot for OLS-residualene viser tydelig spatial autokorrelasjon.
+Punktene i plottet er sterkt gruppert, spesielt rundt første og tredje kvadrant, som indikerer positiv romlig korrelasjon mellom residualene.
+Dette antyder at OLS-modellen ikke håndterer den romlige avhengigheten, noe som resulterer i at romlig strukturerte feil fortsatt er til stede.
+Den stigende linjen i plottet bekrefter at det er en romlig sammenheng mellom residualene, som indikerer behov for en modell som kan håndtere denne romlige avhengigheten.
 
-**SEM-modellen (Spatial Error Model)**: SEM-modellen reduserer ofte spatial autokorrelasjon i residualene sammenlignet med OLS.
-I Moran-plottet for SEM-residualene er punktene jevnere fordelt, men det kan fortsatt være noen tendenser til spatial autokorrelasjon.
-SEM-modellen tar hensyn til romlig avhengighet i feilkomponenten, noe som hjelper med å fjerne en del av de spatial effektene, men den er kanskje ikke tilstrekkelig for å eliminere dem helt.
+**SEM-modellen (Spatial Error Model)**:
 
-**SAR-modellen (Spatial Lag Model)**: Moran-plottet for SAR-residualene viser vanligvis en ytterligere reduksjon i spatial autokorrelasjon, ettersom SAR-modellen tar hensyn til spatial avhengighet i den avhengige variabelen (boligprisene) direkte.
-Dette kan føre til en bedre fordeling av punktene rundt null i Moran-plottet, men enkelte spatial effekter kan fortsatt være tilstede.
+Moran-plot for SEM-residualene viser en klar forbedring sammenlignet med OLS.
+Residualene er mer spredt, og det er mindre tydelig clustering i første og tredje kvadrant.
+Dette indikerer at SEM-modellen har klart å fange opp en stor del av den spatial autokorrelasjonen som var til stede i OLS-modellen.
 
-**SDEM-modellen (Spatial Durbin Error Model)**: For SDEM-modellen viser Moran-plottet ofte de mest spredte punktene rundt null, som indikerer at både direkte og indirekte romlige effekter blir håndtert på en effektiv måte.
-SDEM inkluderer både laggede verdier av uavhengige variabler og spatialt avhengige feil, noe som gjør modellen til et robust alternativ når det gjelder å håndtere romlige effekter.
-Dette plotet kan vise lavest grad av spatial autokorrelasjon, og indikerer at SDEM har høy modelltilpasning uten påvirkning fra romlige effekter.
+Den fladere linjen i plottet viser at det er mindre romlig autokorrelasjon igjen i residualene, noe som tyder på at SEM-modellen har vært effektiv i å redusere romlig avhengighet i feilene.
 
-**SLX-modellen (Spatial Lag of X)**: SLX-modellen adresserer også romlige effekter gjennom laggede uavhengige variabler, men ikke gjennom den avhengige variabelen.
-Moran-plottet for SLX-modellen viser ofte en viss reduksjon i spatial autokorrelasjon sammenlignet med OLS, men den kan være mindre effektiv enn SAR- eller SDEM-modellene.
-Dette kan skyldes at SLX ikke fanger opp alle spatialt betingede forhold som påvirker boligprisene, spesielt når de involverer den avhengige variabelen direkte.
+**SDEM-modellen (Spatial Durbin Error Model)**:
 
-**Konklusjon**
+Moran-plot for SDEM-residualene viser et lignende mønster som SEM-modellen, med spredte residualer og mindre clustering.
+Dette bekrefter at også SDEM-modellen håndterer spatial autokorrelasjon godt, og at den fanger opp både direkte og indirekte romlige effekter.
 
-Samlet sett indikerer Moran-plottene at SDEM-modellen, med sin evne til å håndtere både direkte og indirekte spatial effekter, er best egnet til å eliminere romlige effekter fra residualene.
-SAR-modellen viser også en god reduksjon i spatial autokorrelasjon, mens SEM og SLX-modellene har en moderat effekt.
-OLS-modellen er derimot ikke tilstrekkelig for å håndtere spatial autokorrelasjon i dette datasettet, noe som understreker behovet for en spatial modell for å modellere boligprisene nøyaktig.
+Linjen i plottet er fortsatt noe stigende, men det er færre ekstreme verdier sammenlignet med OLS.
+SDEM-modellen ser ut til å være minst like effektiv som SEM i å håndtere romlige avhengigheter.
 
-## 
+**SLX-modellen (Spatial Lag of X Model)**:
+
+Moran-plot for SLX-residualene viser at modellen klarer å redusere noe av den spatial autokorrelasjonen, men ikke i like stor grad som SEM eller SDEM.
+Det er fortsatt en viss clustering synlig, spesielt i første og tredje kvadrant, noe som tyder på at SLX-modellen ikke fullt ut håndterer romlig avhengighet i dataene.
+Sammenlignet med OLS er SLX en forbedring, men den flate linjen er ikke like tydelig som i SEM- eller SDEM-plottene.
+Dette indikerer at SLX-modellen er mindre effektiv når det gjelder å fjerne spatial autokorrelasjon i residualene.
+
+**Konklusjon:**
+
+Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon best, med SEM som en lett overlegen modell, mens **OLS** sliter mest med å håndtere de romlige effektene.
+**SLX-modellen** klarer å redusere noe av den spatial avhengigheten, men ikke i like stor grad som SEM og SDEM.
 
 Diskusjon av resultater
 

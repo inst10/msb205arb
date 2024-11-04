@@ -742,6 +742,26 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
 summary(SLX)
 ```
 
+**Likelihood Ratio Test:**
+
+Denne type test brukes til å sammenligne to modeller for å vurdere om den mer komplekse modellen gir en signifikant forbedring i modelltilpasning.
+I dette tilfellet har alle de romlige modellene (SEM, SDEM og SLX) signifikant lavere AIC og høyere log-likelihood enn OLS-modellen, noe som indikerer at de passer bedre til dataene.
+
+**Sammenligning av modellene:**
+
+SEM-modellen (AIC = 51 436) og SLX-modellen (AIC = 51 409) har begge lavere AIC-verdier enn SDEM-modellen (AIC = 51,502).
+AIC er et mål på modellens kvalitet, der lavere verdier indikerer en bedre modell som balanserer god tilpasning og modellkompleksitet.
+
+SLX-modellen har den laveste AIC (51 409), noe som antyder at den gir den beste balansen mellom modelltilpasning og kompleksitet sammenlignet med de andre modellene.
+Log-likelihood er også høyest for SLX-modellen (-25,683.28), som bekrefter at den gir den beste tilpasningen til dataene.
+
+**Konklusjon:**
+
+Basert på AIC, log-likelihood, og likelihood ratio test ser SLX-modellen ut til å være den beste modellen for dette datasettet, siden den har den laveste AIC og høyeste log-likelihood.
+Selv om SEM-modellen også gir en betydelig forbedring i forhold til OLS og SDEM-modellen, indikerer AIC og log-likelihood at SLX-modellen gir den beste balansen mellom tilpasning og kompleksitet.
+
+**Bergener residualene for modellene:**
+
 ```{r}
 #| echo: false
 #| output: false
@@ -758,6 +778,8 @@ residuals_sdem <- residuals(SDEM)
 # Beregn residualene for SLX-modellen
 residuals_slx <- residuals(SLX)
 ```
+
+**Bruker "moran plot" på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.**
 
 ```{r}
 #| echo: false

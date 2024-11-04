@@ -244,6 +244,7 @@ tracts10_join <- st_join(kc_house_data, tracts10)
 
 ```{r}
 #| echo: false
+#| output: false
 # Sjekk områdevariablene i tracts10
 summary(tracts10_join)
 ```

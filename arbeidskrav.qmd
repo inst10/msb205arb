@@ -296,7 +296,7 @@ Vi har gjennomført en Exploratory Data Analysis (EDA) av dataene i Geoda.
 Her har vi generert en vektfil ut fra 3 og 10 nærmeste naboer og brukt *Bivariate Moran\`s I* til å se på romlig autokorrelasjon mellom pris og boareal (sqft_living).
 Vi har også brukt *Bivariate Local Morans I* for å finne ut hvor de små og dyre, store og dyre, billige og store, og de små og billige boligene ligger.
 
-![](images/Skjermbilde 2024-11-05 kl. 11.11.56.png)
+![](images/Skjermbilde%202024-11-05%20kl.%2011.11.56.png)
 
 For vektor3 (de 3 nærmeste naboene) er Moran’s I = 0.406, mens for vektor10 (de 10 nærmeste naboene) er Moran’s I = 0.353.
 Begge Moran’s I-verdiene er positive, noe som indikerer en positiv romlig autokorrelasjon.
@@ -347,13 +347,18 @@ model3 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + di
 ```
 
 En regresjonstabell for de tre modellene er gitt i @tbl-models-comparison .
-T-verdier er gitt i paranteser under koeffisientene.
+T-verdiene er gitt i parantes under koeffisientene i tabellen.
+En høy t-verdi indikerer at koeffisienten er signifikant, noe som betyr at variabelen trolig har en reell effekt på boligprisene.
+I tabellen ser vi at variablene bedrooms, sqft_living, sqft_lot har høye t-verdier i alle modellene, noe som tyder på at de er sterke og signifikante forklaringsvariabler.
+Floors har svak t-verdi i modell 1, men sterke t-verdier i modell 2 og modell 3.
+Vi ser også at dist_CBD, transporta, poverty og EHD også har høye t-verdier i de modellene de inkluderes.
+Enkelte tidsdummier har relativt lave t-verdier, noe som tyder på at deres effekt på boligprisen er svakere og kan være mindre pålitelig.
 
 ```{r}
 #| echo: false
 #| ft.arraystretch: 0.9
 #| label: tbl-models-comparison
-#| tbl-cap: "Sammenligning av modell 1, 2, and 3."
+#| tbl-cap: "Regresjonstabell"
 
 model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + year_month, data = tracts10_join)
 
@@ -376,63 +381,51 @@ line_spacing(space = 0.3, part = "body")
 
 ```
 
-**Sammenlign modeller basert på R-squared og justert R-squared**
+## 4.1 Sammenligning av modeller: Hvilken er best?
 
-```{r}
-#| echo: false
-summary(model1)$r.squared  # Nullmodell
-summary(model2)$r.squared  # Modell 2
-summary(model3)$r.squared  # Modell 3
+**R² og justert R²**
 
-summary(model1)$adj.r.squared  # Justert R-squared for nullmodellen
-summary(model2)$adj.r.squared  # Justert R-squared for modell 2
-summary(model3)$adj.r.squared  # Justert R-squared for modell 3
-```
+Modell 1 har den laveste R² og justert R², noe som tyder på at den forklarer minst av variasjonen i dataene.
+Modell 2 har en betydelig høyere R²og justert R² enn modell 1, noe som indikerer en bedre forklaringsevne.
+Modell 3 har den høyeste R² og justert R², som tyder på at den gir den beste forklaringen av boligprisene blant de tre modellene.
+Basert på R² og justert R² ser Modell 3 ut til å være den mest pålitelige av de tre, da den forklarer mest av variasjonen i boligprisene.
 
-**Nullmodellen** har den laveste R-squared og justert R-squared, noe som tyder på at den forklarer minst av variasjonen i dataene.
+**AIC og BIC**
 
-**Modell 2** har en betydelig høyere R-squared og justert R-squared enn nullmodellen, noe som indikerer en bedre forklaringsevne.
+Model 1 har en AIC-verdi på 588488.8, mens model 2 har en AIC-verdi på 581042.0.
+Model 3 har den laveste AIC-verdien på 580636.9.
+Lavere AIC-verdi betyr at model 3 er å foretrekke over model 1 og model 2, siden den gir en bedre balanse mellom tilpasning og kompleksitet.
 
-**Modell 3** har den høyeste R-squared og justert R-squared, som tyder på at den gir den beste forklaringen av boligprisene blant de tre modellene.
+Model1 har en BIC-verdi på 588640.0, model 2 har en BIC-verdi på 581217.1, og model 3 har den laveste BIC-verdien på 580804.1.BIC-verdi følger samme prinsipp som AIC: lavere verdier er bedre.
+Også her har model 3 den laveste verdien, noe som indikerer at model 3 er den beste modellen av de tre når man også tar hensyn til modellens kompleksitet.
 
-**Konklusjon**: Basert på R-squared og justert R-squared ser Modell 3 ut til å være den mest pålitelige av de tre, da den forklarer mest av variasjonen i boligprisene.
+**Log-likelihood**
 
-**Sammenlign modeller basert på AIC og BIC**
+Log-likelihood er en måling av modellens sannsynlighet; høyere log-likelihood er bedre.
+Modell 3 har høyest log-likelihood med en verdi på -290297.438, som betyr at den gir best tilpasning til dataene sammenlignet med de andre modellene.
 
-```{r}
-#| echo: false
-AIC(model1, model2, model3)
-BIC(model1, model2, model3)
-```
+**F-verdi**
 
-**Tolking av AIC-verdiene**
+F-verdien indikerer hvor godt modellen samlet sett forklarer variasjonen i boligprisene.
+Fra tabellen ser vi at F-verdien øker fra modell 1 (1297.057) til modell 3 (2180.926), noe som tyder på at den siste modellen har er best.
+Denne økningen i F-verdien fra modell 1 til modell 3 indikerer at når vi inkluderer flere variabler forbedres modellens forklaringskraft betraktelig.
 
-**Model1** har en AIC-verdi på 588488.8.
+**RMSE**
 
-**Model2** har en AIC-verdi på 581042.0.
+RMSE (Root Mean Squared Error) viser gjennomsnittlig avvik mellom de faktiske og de predikerte boligprisene.
+Den faller fra modell 1 (257716.91) til modell 3 (214129.63), noe som betyr at Modell 3 gir de mest presise prediksjonene og har lavest feilmargin.
 
-**Model3** har den laveste AIC-verdien på 580636.9.
+**Konklusjon**
 
-Lavere AIC-verdi betyr at model3 er å foretrekke over model1 og model2, siden den gir en bedre balanse mellom tilpasning og kompleksitet.
+Modell 3 ser ut til å være den mest pålitelige og presise modellen.
+Modell 3 har den høyeste R² og justert R², noe som indikerer at den forklarer mest av variasjonen i prisene.
+I tillegg har modell 3 de laveste AIC- og BIC-verdiene, som viser at modellen gir en god balanse mellom kompleksitet og tilpasning.
+Med høyest log-likelihood og en betydelig forbedret F-verdi, er modell 3 også bedre tilpasset dataene enn de andre modellene.
+Modell 3 har også den laveste RMSE-verdien, noe som tyder på at den gir de mest presise prediksjonene med minst avvik fra de faktiske boligprisene.
 
-**Tolking av BIC-verdiene**
+## 4.2 Residualanalyse
 
-**Model1** har en BIC-verdi på 588640.0.
-
-**Model2** har en BIC-verdi på 581217.1.
-
-**Model3** har den laveste BIC-verdien på 580804.1.
-
-BIC-verdi følger samme prinsipp som AIC: lavere verdier er bedre.
-Også her har model3 den laveste verdien, noe som indikerer at model3 er den beste modellen av de tre når man også tar hensyn til modellens kompleksitet.
-
-**Sammenfattende konklusjon**
-
-Både AIC- og BIC-resultatene viser at model3 gir den beste tilpasningen blant de tre modellene, da den har lavere AIC- og BIC-verdier sammenlignet med model1 og model2.
-Dette støtter konklusjonen fra R-squared og justert R-squared analysen, hvor model3 også hadde de høyeste verdiene.
-Totalt sett er model3 den mest optimale modellen basert på AIC, BIC, og forklaringskraft.
-
-**Residualanalyse med plot() for å vurdere modellens egenskaper**
+Videre utføres en residualanalyse for å vurdere modellens egenskaper.
 
 ```{r}
 #| echo: false
@@ -442,7 +435,7 @@ plot(model2)  # Modell 2
 plot(model3)  # Modell 3
 ```
 
-**1. Residuals vs Fitted**
+**Residuals vs Fitted**
 
 Dette plottet viser forholdet mellom residualene og de tilpassede verdiene.
 Et godt tilpasset lineært forhold skal vise en tilfeldig fordeling av punktene rundt null-linjen, uten tydelige mønstre.
@@ -452,7 +445,7 @@ For noen av modellene, spesielt Nullmodellen, kan vi se noen mønstre som tyder 
 
 Modell 3 ser ut til å ha en jevnere fordeling enn de andre modellene, noe som indikerer at denne modellen kan ha en bedre tilpasning.
 
-**2. Normal Q-Q Plot**
+**Normal Q-Q Plot**
 
 Q-Q-plottet viser om residualene er normalfordelte ved å plotte de standardiserte residualene mot de teoretiske kvantilene for en normalfordeling.
 
@@ -461,7 +454,7 @@ Dette indikerer at det er enkelte avvik eller “outliers” som ikke følger no
 
 Modell 3 ser ut til å ha litt færre avvik enn de andre modellene, men det er fortsatt tegn på at noen residualer ikke er helt normalfordelte.
 
-**3. Scale-Location (Spread-Location) Plot**
+**Scale-Location (Spread-Location) Plot**
 
 Dette plottet viser kvadratroten av de standardiserte residualene mot de tilpassede verdiene.
 En jevn fordeling av punktene langs null-linjen indikerer homoskedastisitet (lik varians).
@@ -470,7 +463,7 @@ I alle modellene ser vi en svak trend der variansen øker med de tilpassede verd
 
 Modell 3 ser igjen litt bedre ut enn Nullmodellen og Modell 2, men heteroskedastisitet kan fortsatt være et problem.
 
-**4. Residuals vs Leverage**
+**Residuals vs Leverage**
 
 Dette plottet viser hvilke observasjoner som har stor innflytelse på modellen (leverage) og hvor store residualene er for disse observasjonene.
 Punkter som ligger langt fra de fleste dataene, og spesielt de som har høy leverage, kan være “influential points” som påvirker modellen betydelig.
@@ -483,11 +476,13 @@ Modell 3 ser ut til å ha færre punkter med høy leverage enn de andre modellen
 
 **Konklusjon**
 
-Samlet sett gir Modell 3 den beste tilpasningen blant de tre, men det er fortsatt noen utfordringer.
+Samlet sett gir modell 3 den beste tilpasningen blant de tre, men det er fortsatt noen utfordringer.
 Den har en jevnere fordeling i Residuals vs Fitted og færre punkter med høy leverage sammenlignet med de andre modellene, noe som indikerer bedre tilpasning.
 Men normalitet og homoskedastisitet er fortsatt utfordrende for alle modellene, noe som tyder på at det kan være rom for videre forbedring, eventuelt med alternative modeller eller transformasjoner av variablene.
 
 # **5.0 Simultan test på tids-dummiene**
+
+Videre skal vi bruke en simultan test på tids-dummiene for å avgjøre om vi trenger disse i modellen.
 
 ```{r}
 #| echo: false
@@ -507,9 +502,7 @@ print("Resultat for Model 3:")
 print(test_result3)
 ```
 
-**Tolkning av resultatene for hver modell**
-
-**Model 1**
+## **5.1 Model 1**
 
 **F-verdi**: 5.717
 
@@ -518,7 +511,7 @@ print(test_result3)
 For Model 1 indikerer den lave p-verdien (p \< 0.001) at vi kan avvise nullhypotesen om at alle tids-dummiene samlet er lik null.
 Dette betyr at tids-dummiene har en signifikant effekt på modellens forklaringskraft, og de bør inkluderes i modellen.
 
-**Model 2**
+## **5.2 Model 2**
 
 **F-verdi**: 8.2016
 
@@ -527,7 +520,7 @@ Dette betyr at tids-dummiene har en signifikant effekt på modellens forklarings
 I Model 2 er p-verdien også svært lav, noe som igjen betyr at vi kan avvise nullhypotesen.
 Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bør beholdes.
 
-**Model 3**
+## **5.3 Model 3**
 
 **F-verdi**: 9.1943
 
@@ -535,7 +528,7 @@ Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bø
 
 For Model 3 er resultatet det samme: den lave p-verdien indikerer at tids-dummiene er signifikante for å forklare variasjonen i boligprisene, og derfor bør tids-dummiene inkluderes i modellen.
 
-**Samlet konklusjon**
+## **Konklusjon**
 
 For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som indikerer at tids-dummiene samlet sett har en signifikant effekt på modellene.
 Med andre ord, **tids-dummiene bør inkluderes i alle modellene** fordi de bidrar til å forklare variasjonen i boligprisene over tid.

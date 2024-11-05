@@ -320,7 +320,16 @@ Store og billige, samt små og billige boliger er utbredt i sør, noe som kan ty
 
 # 4.0 Hedoniske modeller
 
-1.  En null modell med bare huskarakteristika og tids-dummier (year_month)
+Hedoniske modeller brukes for å estimere boligpriser basert på spesifikke egenskaper som boligens størrelse, beliggenhet, nærhet til fasiliteter, samt miljømessige kvaliteter som luftkvalitet og støy.
+Ved å analysere hvordan disse faktorene påvirker salgspriser, kan vi finne den implisitte prisen av hver egenskap.
+Vi skal i dette kapittelet definere tre hedoniske modeller.
+
+Den første modellen er en null modell med bare huskarakteristika og tids-dummier.
+Den andre modellen inkluderer huskarakteristika, distanse til CBD, relevante tract-variabler og tids-dummier.
+
+1.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\living}_i + \beta_4 \cdot \text{sqft\lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{year\month}_i + \epsilon_i\end{equation}$
+2.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\living}_i + \beta_4 \cdot \text{sqft\lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year\month}_i + \epsilon_i\end{equation}$
+3.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\living}_i + \beta_4 \cdot \text{sqft\lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year\month}_i + \epsilon_i\end{equation}$
 
 ```{r}
 #| echo: false
@@ -329,35 +338,43 @@ model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + ye
 
 ```{r}
 #| echo: false
-summary(model1)
-```
-
-2.En modell med huskarakteristika, dist_CBD, relevante tract-variabler og tids-dummier.
-
-```{r}
-#| echo: false
 model2 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + transporta + poverty_pe + year_month, data = tracts10_join)
 ```
-
-```{r}
-#| echo: false
-summary(model2)
-```
-
-3.En modell med huskarakteristika, dist_CBD, EHD indeks (eventuelt inntektsvariabel) og tids-dummier.
 
 ```{r}
 #| echo: false
 model3 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + EHD_percen + year_month, data = tracts10_join)
 ```
 
+En regresjonstabell for de tre modellene er gitt i @tbl-models-comparison .
+T-verdier er gitt i paranteser under koeffisientene.
+
 ```{r}
 #| echo: false
-summary(model3)
-```
+#| ft.arraystretch: 0.9
+#| label: tbl-models-comparison
+#| tbl-cap: "Sammenligning av modell 1, 2, and 3."
 
--   Rapporter de tre modellen i en regresjonstabell (se eksemplet med modelsummary() og flextable ovenfor). Bruk robuste standard errors. Rapporter t-verdien som er det vanligste innen økonometri.
--   Test og diskuter hvilken modell som er best.
+model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + year_month, data = tracts10_join)
+
+model2 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + transporta + poverty_pe + year_month, data = tracts10_join)
+
+model3 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + EHD_percen + year_month, data = tracts10_join)
+
+modelsummary(
+  list(
+    `Modell 1` = model1, 
+    `Modell 2` = model2,
+    `Modell 3` = model3
+  ), 
+  statistic = "statistic",
+  stars = TRUE,
+  output = "flextable"
+) %>% 
+theme_booktabs() |> 
+line_spacing(space = 0.3, part = "body")
+
+```
 
 **Sammenlign modeller basert på R-squared og justert R-squared**
 

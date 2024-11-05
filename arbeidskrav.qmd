@@ -8,6 +8,7 @@ editor: visual
 #| label: setup
 #| echo: false
 #| output: false
+#| warning: false
 library(tidyverse)
 library(lubridate)
 library(sf)
@@ -26,9 +27,22 @@ library(flextable)
 library(modelsummary)
 ```
 
-## **1. House Sales King County, USA fra Kaggle**
+# 1.0 Introduksjon
 
-Laster inn datasett.
+I denne oppgaven skal vi analysere boligmarkedet i King County i USA, med fokus på ulike faktorer som påvirker boligprisene.
+Vi vil estimere ulike hedoniske prismodeller for å undersøke hvordan både huskarkateristika og områdespesifikke variabler påvirker salgsprisene.
+Gjennom en *Exploratory Data Analysis (EDA)* vil vi kartlegge og visualisere data for å avdekke trender og mønstre i boligmarkedet.
+Ved bruk av romlige regresjonsmodeller forsøker vi å forstå hvordan geografiske forskjeller og nærmiljøets karakteristika bidrar til variasjoner i boligpriser.
+
+# 2.0 Data
+
+## **2.1 House Sales in King County, USA**
+
+Det første datasettet som er brukt i oppgaven er *House Sales in King County, USA* fra Kaggle.
+Datasettet inneholder rundt 27 000 observasjoner med detaljerte variabler som beskriver ulike egenskaper ved de solgte boligene.
+I tillegg inneholder datasettet salgspris og geografiske koordinater for hver observasjon.
+Variablene gir en omfattende innsikt i både boligkarakteristika og salgsdetaljer for perioden 2014-2015.
+Vi la til en variabel som angir avstand i km til CBD i Seattle.
 
 ```{r}
 #| echo: false
@@ -90,9 +104,11 @@ kc_house_data <- kc_house_data %>%
          waterfront )
 ```
 
-## **2. WADOH Environmental Health Disparities Index Calculated for King County**
+## **2.2 WADOH Environmental Health Disparities Index Calculated for King County**
 
-Laster inn datasett.
+I datsettet *House Sales in King County, USA* fra Kaggle mangler det variabler som beskriver området hvor boligene ligger.
+Denne informasjonen henter vi fra datasettet *WADOH Environmental Health Disparities Index calculated for King County*, utarbeidet av Washington State Department of Health.
+Datasettet inneholder en EHD-indeks for alle "cencus tracts" i King County.
 
 ```{r}
 #| echo: false
@@ -133,6 +149,14 @@ kc_wadoh_map <- st_read("MandD/WADOH_Environmental_Health_Disparities_Index_Calc
 # Projeksjon: EPSG:2926
 kc_wadoh_map <- st_transform(kc_wadoh_map, crs = 2926)
 ```
+
+## 2.3 Cencus shapefile og tracts10
+
+Vi benyttet også flere datasett fra en cencus shapefil for King County, utarbeidet av King County GIS. Vi hentet data om samlet familie inntekt fra datafilen *acs_b19101_familyincome.dbf* og opplysninger om etnisitet fra datasettet *acs_b02001_race.dbf.* Disse to datasettene gir informasjon om familie inntekt og etnisitet på "cencus-tracts"-nivå.
+Vi brukte disse to datasettene til å lage variabler som vi la til i WADOH-datasettet.
+Fra cencus shapefilen lastet vi også ned kartet *tracts10* som vi slo sammen med alle "cencus-tracts" variablene i WADOH-datasettet.
+Videre gjorde vi en spatial join med hus-datene fra Kaggle for å binde områdevariablene til de respektive boligene.
+Vi benyttet projeksjonen EPSG:2926 for alle kartene.
 
 ```{r}
 #| echo: false
@@ -234,8 +258,6 @@ tracts10 <- st_transform(tracts10, crs = 2926)
 kc_house_data <- st_transform(kc_house_data, crs = 2926)
 ```
 
-## **3. Gjør en «spatial join» av husdata med tracts10**
-
 ```{r}
 #| echo: false
 # Spatial join mellom husdata og tracts10
@@ -268,90 +290,35 @@ tracts10_join <- tracts10_join %>%
 st_write(tracts10_join, "house_data.gpkg", append=FALSE)
 ```
 
-## **Exploratory Data Analysis (EDA)**
+# **3.0 Exploratory Data Analysis (EDA)**
 
-## **4. Utfør EDA i GeoDA**
+Vi har gjennomført en Exploratory Data Analysis (EDA) av dataene i Geoda.
+Her har vi generert en vektfil ut fra 3 og 10 nærmeste naboer og brukt *Bivariate Moran\`s I* til å se på romlig autokorrelasjon mellom pris og boareal (sqft_living).
+Vi har også brukt *Bivariate Local Morans I* for å finne ut hvor de små og dyre, store og dyre, billige og store, og de små og billige boligene ligger.
 
-![](images/clipboard-1966060883.png)
+![](images/Skjermbilde 2024-11-05 kl. 11.11.56.png)
 
-![](images/clipboard-2834459025.png)
-
-**Sammenligning av Moran’s I-verdier**
-
-For vektor3 (de 3 nærmeste naboene) er **Moran’s I** = 0.406.
-
-For vektor10 (de 10 nærmeste naboene) er **Moran’s I** = 0.353
-
-**Tolkning**: Begge Moran’s I-verdiene er positive, noe som indikerer en positiv romlig autokorrelasjon.
+For vektor3 (de 3 nærmeste naboene) er Moran’s I = 0.406, mens for vektor10 (de 10 nærmeste naboene) er Moran’s I = 0.353.
+Begge Moran’s I-verdiene er positive, noe som indikerer en positiv romlig autokorrelasjon.
 Dette betyr at det er en tendens for høye prisverdier å være assosiert med høye verdier for boligareal (og tilsvarende for lave verdier).
-Når du inkluderer flere naboer (går fra vektor3 til vektor10), reduseres styrken på den romlige autokorrelasjonen noe, noe som tyder på at den romlige sammenhengen mellom pris og størrelse er sterkere på en lokal skala.
-
-**Skala-effekter og romlig sammenheng**
-
-Ved å bruke vektor3 (de 3 nærmeste naboene) får du en høyere Moran’s I-verdi enn med vektor10.
-Dette antyder at relasjonen mellom pris og størrelse er mer markant når man ser på umiddelbare naboer.
-
-Når du inkluderer flere naboer med vektor10, ser du en liten nedgang i Moran’s I. Dette kan skyldes at det romlige mønsteret er sterkest på en liten skala, og at effekten svekkes når flere, mer fjerntliggende naboer inkluderes.
-
-**Praktisk tolkning**
-
-**Lokale mønstre**: De høyere Moran’s I-verdiene for vektor3 kan indikere at små grupper av boliger med høy pris og stort areal tenderer å være konsentrert i visse områder.
+Når du inkluderer flere naboer (går fra vektor3 til vektor10), reduseres styrken på den romlige autokorrelasjonen noe, noe som tyder på at den romlige sammenhengen mellom pris og størrelse er sterkere på en mer lokal skala.
+De høyere Moran’s I-verdiene for vektor3 kan indikere at små grupper av boliger med høy pris og stort areal tenderer å være konsentrert i visse områder.
 Dette kan reflektere “hot spots” hvor dyre og store boliger samles.
+Tilsvarende kan det også finnes clusters hvor boliger med lav pris og mindre areal samles.
+Når vi går over til vektor10, ser vi at romlige sammenhenger fremdeles finnes, men er noe mindre uttalt, noe som kan indikere at pris og størrelse varierer mer på tvers av større områder.
 
-**Områder med lav pris og areal**: Tilsvarende kan det også finnes lokale områder (clusters) hvor boliger med lav pris og mindre areal samles.
+![](images/clipboard-2130930382.png)
 
-**Større skala**: Når du går over til vektor10, kan det bety at romlige sammenhenger fremdeles finnes, men er noe mindre uttalt, noe som kan indikere at pris og størrelse varierer mer på tvers av større områder.
+Ved hjelp av et LISA cluster map illustreres det hvordan fordelingen mellom små og dyre, store og dyre, billige og store, og små og billige boliger er både for vektor 3 og vektor 10.
+De to kartene er relativt like og vi kan se de samme mønstrene.
+Ut i fra disse kartene er det tydelig at for både vektor 3 og vektor10 er store og dyre boliger er konsentrert nord i King County, det samme gjelder for små og dyre boliger.
+Dette reflekterer “hot spots” hvor dyre boliger samles.
+Det kommer også frem fra kartene at det er flere store og dyre boliger enn det er små og dyre boliger.
+Når det kommer til billige boliger, er disse mer jevnt fordelt rundt i landet enn de dyre.
+Sør i King County er det overvekt av billige boliger.
+Store og billige, samt små og billige boliger er utbredt i sør, noe som kan tyde på "cold spots" hvor fattige eller mindre attraktive nabolag er utbredt.
 
-**1. Små og Dyre Boliger**
-
-**Vektor3** (3 nærmeste naboer): Med vektor3 ser vi en sterkere autokorrelasjon.
-
-Små og dyre boliger vil sannsynligvis ligge i områder hvor prisene er høye til tross for mindre boligareal, og disse vil være geografisk konsentrert rundt spesifikke, mindre nabolag.
-
-**Vektor10** (10 nærmeste naboer): Med vektor10 ser vi en noe svakere romlig autokorrelasjon.
-
-Dette antyder at de små, dyre boligene er mindre konsentrert på en større skala.
-Dette kan bety at små og dyre boliger er litt mer spredt utover større områder, men finnes fortsatt i visse høyprissegmenter.
-
-**2. Store og Dyre Boliger**
-
-**Vektor3:** Store og dyre boliger vil vises som områder hvor både pris og boligareal er høyt, og vi ser at dette er mer lokalt konsentrert når vi bruker vektor3.
-
-Slike “hot spots” for store, dyre boliger indikerer at visse luksuriøse nabolag kan være romlig nær hverandre.
-
-**Vektor10:** Når vi øker skalaen til de 10 nærmeste naboene, vil noen av disse dyre og store boligene fortsatt være romlig konsentrert, men det viser en mer utvidet sammenheng, som kan bety at områder med store og dyre boliger strekker seg over flere nabolag i regionen.
-
-**3. Billige og Store Boliger**
-
-**Vektor3:** Med vektor3 vil store, men rimelige boliger trolig ligge i spesifikke områder hvor store boliger finnes, men med lavere prisnivåer.
-
-Disse kan være lokalisert i utkanter eller mindre ettertraktede områder, hvor arealet er stort, men etterspørselen er lavere.
-
-**Vektor10:** Når du ser på vektor10, kan disse billige og store boligene være mer spredt og ikke nødvendigvis konsentrert.
-
-Dette antyder at når vi går til større skalaer, finnes det flere områder med billige, store boliger som kan spre seg over flere nabolag eller ligger i mer spredte områder.
-
-**4. Små og Billige Boliger**
-
-**Vektor3:** Små og billige boliger er mest sannsynlig geografisk konsentrert i visse områder med lave priser og mindre boliger.
-
-Dette kan være områder med tettere bebyggelse eller mindre attraktive boliger, som kan indikere mindre nabolag med lav etterspørsel.
-
-**Vektor10:** Når vi øker skalaen til de 10 nærmeste naboene, vil disse små, billige boligene trolig finnes i mer spredte eller blandede områder.
-
-Vi ser at pris og størrelse fremdeles viser en positiv korrelasjon, men på en litt bredere geografisk skala, noe som kan indikere at små og rimelige boliger finnes i en bredere del av regionen.
-
-**Oppsummering:**
-
-Lokal konsentrasjon med vektor3: Når vi ser på de 3 nærmeste naboene, får vi et tydeligere bilde av lokale “hot spots” og “cold spots” for hver av boligtypene.
-
-Dette betyr at små og dyre, store og dyre, store og billige, og små og billige boliger er mer lokalt konsentrert.
-
-Mer spredt mønster med vektor10: Når vi inkluderer de 10 nærmeste naboene, ser vi at mønstrene for boligtypene blir mer spredt.
-
-Dette antyder at mønstrene ikke er like sterke på en større skala, og at ulike boligtyper kan finnes i flere ulike områder over et bredere geografisk område.
-
-## 5. Hedoniske modeller
+# 4.0 Hedoniske modeller
 
 1.  En null modell med bare huskarakteristika og tids-dummier (year_month)
 
@@ -503,7 +470,7 @@ Samlet sett gir Modell 3 den beste tilpasningen blant de tre, men det er fortsat
 Den har en jevnere fordeling i Residuals vs Fitted og færre punkter med høy leverage sammenlignet med de andre modellene, noe som indikerer bedre tilpasning.
 Men normalitet og homoskedastisitet er fortsatt utfordrende for alle modellene, noe som tyder på at det kan være rom for videre forbedring, eventuelt med alternative modeller eller transformasjoner av variablene.
 
-## **6. Simultan test på tids-dummiene**
+# **5.0 Simultan test på tids-dummiene**
 
 ```{r}
 #| echo: false
@@ -557,7 +524,7 @@ For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som in
 Med andre ord, **tids-dummiene bør inkluderes i alle modellene** fordi de bidrar til å forklare variasjonen i boligprisene over tid.
 Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette datasettet.
 
-## 7. Spatial Regressions
+# 6.0 Spatial Regressions
 
 Vår guppe sitt datasett kc_house_data_4242.gpkg, laster det ned.
 
@@ -835,7 +802,7 @@ Dette indikerer at SLX-modellen er mindre effektiv når det gjelder å fjerne sp
 Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon best, med SEM som en lett overlegen modell, mens **OLS** sliter mest med å håndtere de romlige effektene.
 **SLX-modellen** klarer å redusere noe av den spatial avhengigheten, men ikke i like stor grad som SEM og SDEM.
 
-## ***8. Diskusjon av resultatene***
+# 7.0 Diskusjon av resultatene
 
 -   Diskusjon av resultater
 
@@ -913,4 +880,4 @@ Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon bes
     Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg.
     Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.
 
-## Konklusjon
+# 8.0 Konklusjon

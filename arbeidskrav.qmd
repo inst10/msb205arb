@@ -528,7 +528,7 @@ Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bø
 
 For Model 3 er resultatet det samme: den lave p-verdien indikerer at tids-dummiene er signifikante for å forklare variasjonen i boligprisene, og derfor bør tids-dummiene inkluderes i modellen.
 
-## **Konklusjon**
+## **5.4 Konklusjon**
 
 For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som indikerer at tids-dummiene samlet sett har en signifikant effekt på modellene.
 Med andre ord, **tids-dummiene bør inkluderes i alle modellene** fordi de bidrar til å forklare variasjonen i boligprisene over tid.

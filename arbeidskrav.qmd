@@ -715,7 +715,7 @@ summary(impacts(SDEM), zstats = TRUE)
 SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                   andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
                   andel_andre_alene + andel_blandet, 
-                  data = data_with_area_vars, listw = lw3
+                  data = data_with_area_vars, listw = lw3)
 ```
 
 -   

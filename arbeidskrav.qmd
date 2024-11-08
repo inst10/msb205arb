@@ -38,11 +38,11 @@ Ved bruk av romlige regresjonsmodeller forsøker vi å forstå hvordan geografis
 
 ## **2.1 House Sales in King County, USA**
 
-Det første datasettet som er brukt i oppgaven er *House Sales in King County, USA* fra Kaggle.
+Det første datasettet vi har brukt i oppgaven er *House Sales in King County, USA* fra Kaggle.
 Datasettet inneholder rundt 27 000 observasjoner med detaljerte variabler som beskriver ulike egenskaper ved de solgte boligene.
 I tillegg inneholder datasettet salgspris og geografiske koordinater for hver observasjon.
 Variablene gir en omfattende innsikt i både boligkarakteristika og salgsdetaljer for perioden 2014-2015.
-Vi la til en variabel som angir avstand i km til CBD i Seattle.
+Vi la til en variabel som angir avstand i km til CBD i Seattle og endret kartprojeksjonen til EPSG 2926.
 
 ```{r}
 #| echo: false
@@ -108,7 +108,8 @@ kc_house_data <- kc_house_data %>%
 
 I datsettet *House Sales in King County, USA* fra Kaggle mangler det variabler som beskriver området hvor boligene ligger.
 Denne informasjonen henter vi fra datasettet *WADOH Environmental Health Disparities Index calculated for King County*, utarbeidet av Washington State Department of Health.
-Datasettet inneholder en EHD-indeks for alle "cencus tracts" i King County.
+Datasettet inneholder en EHD-indeks, og variablene denne indeksen er utarbeidet fra, for alle "cencus tracts" i King County.
+Vi endret også projeksjonen på dette kartet til EPSG 2926.
 
 ```{r}
 #| echo: false
@@ -154,9 +155,10 @@ kc_wadoh_map <- st_transform(kc_wadoh_map, crs = 2926)
 
 Vi benyttet også flere datasett fra en cencus shapefil for King County, utarbeidet av King County GIS. Vi hentet data om samlet familie inntekt fra datafilen *acs_b19101_familyincome.dbf* og opplysninger om etnisitet fra datasettet *acs_b02001_race.dbf.* Disse to datasettene gir informasjon om familie inntekt og etnisitet på "cencus-tracts"-nivå.
 Vi brukte disse to datasettene til å lage variabler som vi la til i WADOH-datasettet.
-Fra cencus shapefilen lastet vi også ned kartet *tracts10* som vi slo sammen med alle "cencus-tracts" variablene i WADOH-datasettet.
+Fra cencus shapefilen lastet vi også ned kartet *tracts10*.
+Vi la variablene fra WADOH-datasettet in i *tracts10*.
 Videre gjorde vi en spatial join med hus-datene fra Kaggle for å binde områdevariablene til de respektive boligene.
-Vi benyttet projeksjonen EPSG:2926 for alle kartene.
+Vi benyttet projeksjonen EPSG 2926 for alle kartene.
 
 ```{r}
 #| echo: false
@@ -293,28 +295,44 @@ st_write(tracts10_join, "house_data.gpkg", append=FALSE)
 # **3.0 Exploratory Data Analysis (EDA)**
 
 Vi har gjennomført en Exploratory Data Analysis (EDA) av dataene i Geoda.
-Her har vi generert en vektfil ut fra 3 og 10 nærmeste naboer og brukt *Bivariate Moran\`s I* til å se på romlig autokorrelasjon mellom pris og boareal (sqft_living).
+Her har vi generert en vektfil ut fra 3 og 10 nærmeste naboer og brukt *Bivariate Moran\`s I* til å undersøke romlig autokorrelasjon mellom pris og boareal (sqft_living).
 Vi har også brukt *Bivariate Local Morans I* for å finne ut hvor de små og dyre, store og dyre, billige og store, og de små og billige boligene ligger.
 
-![](images/Skjermbilde%202024-11-05%20kl.%2011.11.56.png)
+```{r}
+#| echo: false
+#| label: fig-1
+#| fig-cap: "Figur 1: Bivariate Moran's I for pris og boareal (sqft_living) med 3 og 10 nærmeste naboer"
+#| fig-width: 6
+#| fig-height: 4
 
-For vektor3 (de 3 nærmeste naboene) er Moran’s I = 0.406, mens for vektor10 (de 10 nærmeste naboene) er Moran’s I = 0.353.
-Begge Moran’s I-verdiene er positive, noe som indikerer en positiv romlig autokorrelasjon.
-Dette betyr at det er en tendens for høye prisverdier å være assosiert med høye verdier for boligareal (og tilsvarende for lave verdier).
-Når du inkluderer flere naboer (går fra vektor3 til vektor10), reduseres styrken på den romlige autokorrelasjonen noe, noe som tyder på at den romlige sammenhengen mellom pris og størrelse er sterkere på en mer lokal skala.
-De høyere Moran’s I-verdiene for vektor3 kan indikere at små grupper av boliger med høy pris og stort areal tenderer å være konsentrert i visse områder.
-Dette kan reflektere “hot spots” hvor dyre og store boliger samles.
-Tilsvarende kan det også finnes clusters hvor boliger med lav pris og mindre areal samles.
-Når vi går over til vektor10, ser vi at romlige sammenhenger fremdeles finnes, men er noe mindre uttalt, noe som kan indikere at pris og størrelse varierer mer på tvers av større områder.
+knitr::include_graphics("images/Skjermbilde 2024-11-05 kl. 11.11.56.png")
 
-![](images/clipboard-2130930382.png)
+```
 
-Ved hjelp av et LISA cluster map illustreres det hvordan fordelingen mellom små og dyre, store og dyre, billige og store, og små og billige boliger er både for vektor 3 og vektor 10.
-De to kartene er relativt like og vi kan se de samme mønstrene.
-Ut i fra disse kartene er det tydelig at for både vektor 3 og vektor10 er store og dyre boliger er konsentrert nord i King County, det samme gjelder for små og dyre boliger.
+I @fig-1 ovenfor ser vi at Bivariate Moran’s I har en verdi på 0.406 for de 3 nærmeste naboene og en noe lavere verdi på 0.353 når vi utvidet til de 10 nærmeste naboene.
+Begge verdiene er positive, noe som indikerer en romlig autokorrelasjon mellom pris og boareal (sqft_living).
+Dette innebærer at boliger med høy pris har en tendens til å ligge nær andre boliger med høyt boareal, mens boliger med lav pris har en tendens til å ligge nær boliger med lavt boareal.
+At autokorrelasjonen avtar noe når vi utvider antall naboer, kan tyde på at sammenhengen mellom pris og boareal er sterkest lokalt.
+Dette antyder at relasjonen mellom pris og boareal er mer markant i nærområder, men svekkes over lengre avstander.
+
+```{r}
+#| echo: false
+#| label: fig-2
+#| fig-cap: "Figur 2: Bivariate Local Moran's I for pris og boareal (sqft_living) med 3 og 10 nærmeste naboer illustrert ved LISA Cluster map"
+#| fig-width: 6
+#| fig-height: 4
+
+knitr::include_graphics("images/Skjermbilde 2024-11-05 kl. 12.04.41.png")
+```
+
+I figuren ovenfor har vi brukt *Bivariate Local Morans I* for å finne ut hvor de små og dyre, store og dyre, store og billige, og de små og billige boligene ligger.
+Dette illustreres ved hjelp av et LISA cluster map.
+Kartet til venstre viser fordelingen for 3 nærmeste naboer, mens kartet til høyre viser fordelingen for 10 nærmeste naboer.
+De to kartene er relativt like og vi kan se lignende mønster.
+Ut i fra disse kartene er det tydelig at for både 3 og 10 nærmeste naboer er store og dyre boliger er konsentrert nord i King County, det samme gjelder for små og dyre boliger.
 Dette reflekterer “hot spots” hvor dyre boliger samles.
 Det kommer også frem fra kartene at det er flere store og dyre boliger enn det er små og dyre boliger.
-Når det kommer til billige boliger, er disse mer jevnt fordelt rundt i landet enn de dyre.
+Når det kommer til billige boliger, er disse mer jevnt fordelt enn de dyre.
 Sør i King County er det overvekt av billige boliger.
 Store og billige, samt små og billige boliger er utbredt i sør, noe som kan tyde på "cold spots" hvor fattige eller mindre attraktive nabolag er utbredt.
 
@@ -325,11 +343,12 @@ Ved å analysere hvordan disse faktorene påvirker salgspriser, kan vi finne den
 Vi skal i dette kapittelet definere tre hedoniske modeller.
 
 Den første modellen er en null modell med bare huskarakteristika og tids-dummier.
-Den andre modellen inkluderer huskarakteristika, distanse til CBD, relevante tract-variabler og tids-dummier.
+Den andre modellen inkluderer huskarakteristika, distanse til CBD, relevante tract-variabler (transport og poverty) og tids-dummier.
+Den tredje modellen inkluderer huskarakteristika, distanse til CBD, EHD indeks og tids-dummier.
 
-1.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\living}_i + \beta_4 \cdot \text{sqft\lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{year\month}_i + \epsilon_i\end{equation}$
-2.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\living}_i + \beta_4 \cdot \text{sqft\lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year\month}_i + \epsilon_i\end{equation}$
-3.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\living}_i + \beta_4 \cdot \text{sqft\lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year\month}_i + \epsilon_i\end{equation}$
+1.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft_living}_i + \beta_4 \cdot \text{sqft_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{year_month}_i + \epsilon_i\end{equation}$
+2.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft_living}_i + \beta_4 \cdot \text{sqft_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year_month}_i + \epsilon_i\end{equation}$
+3.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft_living}_i + \beta_4 \cdot \text{sqft_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{EHDindex}_i + \beta_8 \cdot \text{year_month}_i + \epsilon_i\end{equation}$
 
 ```{r}
 #| echo: false

@@ -22,21 +22,22 @@ library(sandwich)
 library(units)
 library(car)
 library(foreign)
+library(stargazer)
 # For tabeller
 library(flextable)
 library(modelsummary)
 ```
 
-# 1.0 Introduksjon
+# **1.0 Introduksjon**
 
 I denne oppgaven skal vi analysere boligmarkedet i King County i USA, med fokus på ulike faktorer som påvirker boligprisene.
 Vi vil estimere ulike hedoniske prismodeller for å undersøke hvordan både huskarkateristika og områdespesifikke variabler påvirker salgsprisene.
 Gjennom en *Exploratory Data Analysis (EDA)* vil vi kartlegge og visualisere data for å avdekke trender og mønstre i boligmarkedet.
 Ved bruk av romlige regresjonsmodeller forsøker vi å forstå hvordan geografiske forskjeller og nærmiljøets karakteristika bidrar til variasjoner i boligpriser.
 
-# 2.0 Data
+# **2.0 Data**
 
-## **2.1 House Sales in King County, USA**
+## 2.1 House Sales in King County, USA
 
 Det første datasettet vi har brukt i oppgaven er *House Sales in King County, USA* fra Kaggle.
 Datasettet inneholder rundt 27 000 observasjoner med detaljerte variabler som beskriver ulike egenskaper ved de solgte boligene.
@@ -104,7 +105,7 @@ kc_house_data <- kc_house_data %>%
          waterfront )
 ```
 
-## **2.2 WADOH Environmental Health Disparities Index Calculated for King County**
+## 2.2 WADOH Environmental Health Disparities Index Calculated for King County
 
 I datsettet *House Sales in King County, USA* fra Kaggle mangler det variabler som beskriver området hvor boligene ligger.
 Denne informasjonen henter vi fra datasettet *WADOH Environmental Health Disparities Index calculated for King County*, utarbeidet av Washington State Department of Health.
@@ -288,6 +289,7 @@ tracts10_join <- tracts10_join %>%
 
 ```{r}
 #| echo: false
+#| output: false
 # Lagre som .gpkg
 st_write(tracts10_join, "house_data.gpkg", append=FALSE)
 ```
@@ -301,7 +303,7 @@ Vi har også brukt *Bivariate Local Morans I* for å finne ut hvor de små og dy
 ```{r}
 #| echo: false
 #| label: fig-1
-#| fig-cap: "Figur 1: Bivariate Moran's I for pris og boareal (sqft_living) med 3 og 10 nærmeste naboer"
+#| fig-cap: "Bivariate Moran's I for pris og boareal (sqft_living) med 3 og 10 nærmeste naboer"
 #| fig-width: 6
 #| fig-height: 4
 
@@ -318,14 +320,14 @@ Dette antyder at relasjonen mellom pris og boareal er mer markant i nærområder
 ```{r}
 #| echo: false
 #| label: fig-2
-#| fig-cap: "Figur 2: Bivariate Local Moran's I for pris og boareal (sqft_living) med 3 og 10 nærmeste naboer illustrert ved LISA Cluster map"
+#| fig-cap: "Bivariate Local Moran's I for pris og boareal (sqft_living) med 3 og 10 nærmeste naboer illustrert ved LISA Cluster map"
 #| fig-width: 6
 #| fig-height: 4
 
 knitr::include_graphics("images/Skjermbilde 2024-11-05 kl. 12.04.41.png")
 ```
 
-I figuren ovenfor har vi brukt *Bivariate Local Morans I* for å finne ut hvor de små og dyre, store og dyre, store og billige, og de små og billige boligene ligger.
+I @fig-2 har vi brukt *Bivariate Local Morans I* for å finne ut hvor de små og dyre, store og dyre, store og billige, og de små og billige boligene ligger.
 Dette illustreres ved hjelp av et LISA cluster map.
 Kartet til venstre viser fordelingen for 3 nærmeste naboer, mens kartet til høyre viser fordelingen for 10 nærmeste naboer.
 De to kartene er relativt like og vi kan se lignende mønster.
@@ -336,7 +338,7 @@ Når det kommer til billige boliger, er disse mer jevnt fordelt enn de dyre.
 Sør i King County er det overvekt av billige boliger.
 Store og billige, samt små og billige boliger er utbredt i sør, noe som kan tyde på "cold spots" hvor fattige eller mindre attraktive nabolag er utbredt.
 
-# 4.0 Hedoniske modeller
+# **4.0 Hedoniske modeller**
 
 Hedoniske modeller brukes for å estimere boligpriser basert på spesifikke egenskaper som boligens størrelse, beliggenhet, nærhet til fasiliteter, samt miljømessige kvaliteter som luftkvalitet og støy.
 Ved å analysere hvordan disse faktorene påvirker salgspriser, kan vi finne den implisitte prisen av hver egenskap.
@@ -346,9 +348,11 @@ Den første modellen er en null modell med bare huskarakteristika og tids-dummie
 Den andre modellen inkluderer huskarakteristika, distanse til CBD, relevante tract-variabler (transport og poverty) og tids-dummier.
 Den tredje modellen inkluderer huskarakteristika, distanse til CBD, EHD indeks og tids-dummier.
 
-1.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft_living}_i + \beta_4 \cdot \text{sqft_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{year_month}_i + \epsilon_i\end{equation}$
-2.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft_living}_i + \beta_4 \cdot \text{sqft_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year_month}_i + \epsilon_i\end{equation}$
-3.  $\begin{equation}\text{P}_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft_living}_i + \beta_4 \cdot \text{sqft_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{EHDindex}_i + \beta_8 \cdot \text{year_month}_i + \epsilon_i\end{equation}$
+$P_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\_living}_i + \beta_4 \cdot \text{sqft\_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{year\_month}_i + \epsilon_i$
+
+$$P_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\_living}_i + \beta_4 \cdot \text{sqft\_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{transport}_i + \beta_8 \cdot \text{poverty}_i + \beta_{9j} \cdot \text{year\_month}_i + \epsilon_i$$
+
+$P_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\_living}_i + \beta_4 \cdot \text{sqft\_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{distCBD}_i + \beta_7 \cdot \text{EHDindex}_i + \beta_8 \cdot \text{year\_month}_i + \epsilon_i$
 
 ```{r}
 #| echo: false
@@ -365,32 +369,13 @@ model2 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + di
 model3 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + EHD_percen + year_month, data = tracts10_join)
 ```
 
-En regresjonstabell for de tre hedoniske modellene er gitt i @tbl-1 .
-I modell 1, som kun inkluderer huskarakteristika og tidsdummier, er antall soverom negativt assosiert med boligprisene (-59,606.36), boliger med flere soverom har lavere priser.
-Antall bad har en positiv effekt (6,795.04), og større boareal øker prisen (315.57).
-Tomtestørrelse har en negativ effekt på -0.399, mens antall etasjer ikke har en signifikant innvirkning på prisene.
-T-verdiene for huskarakteristikaene er alle høye, noe som indikerer at disse er signifikante, mens antall etasjer ikke er signifikant (t-verdi er lav).
-Når det gjelder tidsdummier, viser resultatene at prisene varierer betydelig fra måned til måned, med noen måneder som har positive effekter på prisen, mens andre har en negativ effekt.
-Det er få av tidsdummiene som er signifikante, noe som gjelder for alle modellene.
-
-@tbl-1 viser at i modell 2, som inkluderer distanse til CBD, transport og fattigdom, har boliger lengre unna sentrum lavere priser (-9,749.34), mens dårligere transport og høyere fattigdom reduserer boligprisene (-23,895.01 og -7,491.91).
-T-verdiene for disse variablene er høye, noe som betyr at de har en signifikant innvirkning på boligprisene.
-Resultatene viser også at flere soverom (-49,195.38) reduserer prisen, mens flere bad (19,338.31) og større boareal (294.54) øker prisen.
-Større tomt (0.43) har også en positiv effekt, men med mindre innvirkning enn boareal.
-Flere etasjer (-22,766.37) ser ut til å redusere prisen.
-Alle koeffisientene for huskrakteristika har høy T-verdi.
-Tidsdummiene for 2015 viser igjen variasjon i boligprisene.
-
-@tbl-1 viser at i modell 3 som inkluderer EHD-indeksen, er dårligere miljøforhold assosiert med lavere boligpriser (-2,575.05).
-T-verdien for miljøindeksen er relativt høy, som indikerer at den er signifikant.
-De andre koeffisientene for huskarakteristika, som soverom, bad, boareal, og tomtestørrelse, er stort sett konsistente med de tidligere modellene, og har signifikante t-verdier..
-Tidsdummiene i modell 3 viser også variasjon i boligprisene gjennom året, med noen måneder som har en positiv effekt på prisene, mens andre måneder har en negativ effekt på prisene.
+## 4.1 Regresjonstabell
 
 ```{r}
 #| echo: false
 #| ft.arraystretch: 0.9
 #| label: tbl-1
-#| tbl-cap: "Tabell 1: Regresjonstabell for de tre ulike hedoniske modellene"
+#| tbl-cap: "Regresjonstabell for de tre ulike hedoniske modellene"
 
 model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + year_month, data = tracts10_join)
 
@@ -413,7 +398,29 @@ line_spacing(space = 0.3, part = "body")
 
 ```
 
-## 4.1 Sammenligning av modeller: Hvilken er best?
+En regresjonstabell for de tre hedoniske modellene er gitt i @tbl-1 .
+I modell 1, som kun inkluderer huskarakteristika og tidsdummier, er antall soverom negativt assosiert med boligprisene (-59,606.36), boliger med flere soverom har lavere priser.
+Antall bad har en positiv effekt (6,795.04), og større boareal øker prisen (315.57).
+Tomtestørrelse har en negativ effekt på -0.399, mens antall etasjer ikke har en signifikant innvirkning på prisene.
+T-verdiene for huskarakteristikaene er alle høye, noe som indikerer at disse er signifikante, mens antall etasjer ikke er signifikant (t-verdi er lav).
+Når det gjelder tidsdummier, viser resultatene at prisene varierer betydelig fra måned til måned, med noen måneder som har positive effekter på prisen, mens andre har en negativ effekt.
+Mai 2014 er referansemåneden, noe som betyr at alle de andre dummykoeffisientene i modellen viser prisforskjellen sammenlignet med mai 2014.
+Det er få av tidsdummiene som er signifikante, noe som gjelder for alle modellene.
+
+Modell 2 som inkluderer distanse til CBD, transport og fattigdom, viser at boliger lengre unna sentrum har lavere priser (-9,749.34), mens dårligere transport og høyere fattigdom reduserer boligprisene (-23,895.01 og -7,491.91).
+T-verdiene for disse variablene er høye, noe som betyr at de har en signifikant innvirkning på boligprisene.
+Resultatene viser også at flere soverom (-49,195.38) reduserer prisen, mens flere bad (19,338.31) og større boareal (294.54) øker prisen.
+Større tomt (0.43) har også en positiv effekt, men med mindre innvirkning enn boareal.
+Flere etasjer (-22,766.37) ser ut til å redusere prisen.
+Alle koeffisientene for huskrakteristika har høy T-verdi.
+Tidsdummiene for 2015 viser igjen variasjon i boligprisene.
+
+Modell 3 som inkluderer EHD-indeksen, viser at dårligere miljøforhold er assosiert med lavere boligpriser (-2,575.05).
+T-verdien for miljøindeksen er relativt høy, som indikerer at den er signifikant.
+De andre koeffisientene for huskarakteristika, som soverom, bad, boareal, og tomtestørrelse, er stort sett konsistente med de tidligere modellene, og har signifikante t-verdier..
+Tidsdummiene i modell 3 viser også variasjon i boligprisene gjennom året, med noen måneder som har en positiv effekt på prisene, mens andre måneder har en negativ effekt på prisene.
+
+## 4.2 Sammenligning av de tre modellene Hvilken er best?
 
 **R² og justert R²**
 
@@ -455,55 +462,69 @@ I tillegg har modell 3 de laveste AIC- og BIC-verdiene, som viser at modellen gi
 Med høyest log-likelihood og en betydelig forbedret F-verdi, er modell 3 også bedre tilpasset dataene enn de andre modellene.
 Modell 3 har også den laveste RMSE-verdien, noe som tyder på at den gir de mest presise prediksjonene med minst avvik fra de faktiske boligprisene.
 
-## 4.2 Residualanalyse
+## 4.3 Residualanalyse
 
-Videre utføres en residualanalyse for å vurdere modellens egenskaper.
+Videre utføres en residual- og diagostikkanalyse for å vurdere modellens egenskaper ytterligere.
+Vi skal se nærmere på de fire plottene; "Residuals vs Fitted", "Q-Q Residuals", "Scale-Location" og "Residuals vs Leverage" for de tre hedoniske modellene.
+@fig-3 presenterer de fire plottene for modell 1, mens @fig-4 viser de samme plottene for modell 2, og til slutt gir @fig-5 en presentasjon av de fire plottene for modell 3.
 
 ```{r}
 #| echo: false
+#| label: fig-3
+#| fig-cap: Residual- og diagnostikkplott for Modell 1
+# Plot 1 (Model 1)
 par(mfrow = c(2, 2))  # For å vise alle fire plott i én visning
-plot(model1)  # Nullmodell
-plot(model2)  # Modell 2
-plot(model3)  # Modell 3
+plot(model1) 
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-4
+#| fig-cap: Residual- og diagnostikkplott for Modell 2
+# Plot 2 (Modell 2)
+par(mfrow = c(2, 2))  # For å vise alle fire plott i én visning
+plot(model2) 
+```
+
+```{r}
+#| echo: false
+#| label: fig-5
+#| fig-cap: Residual- og diagnostikkplott  for Modell 3
+# Plot 3 (Modell 3)
+par(mfrow = c(2, 2))  # For å vise alle fire plott i én visning
+plot(model3) 
 ```
 
 **Residuals vs Fitted**
 
 Dette plottet viser forholdet mellom residualene og de tilpassede verdiene.
 Et godt tilpasset lineært forhold skal vise en tilfeldig fordeling av punktene rundt null-linjen, uten tydelige mønstre.
-
 I alle modellene ser vi litt avvik fra en helt jevn fordeling.
-For noen av modellene, spesielt Nullmodellen, kan vi se noen mønstre som tyder på at modellen ikke helt fanger opp alle aspekter av dataene.
-
+For noen av modellene, spesielt modell 1, kan vi se noen mønstre som tyder på at modellen ikke helt fanger opp alle aspekter av dataene.
 Modell 3 ser ut til å ha en jevnere fordeling enn de andre modellene, noe som indikerer at denne modellen kan ha en bedre tilpasning.
 
-**Normal Q-Q Plot**
+**Q-Q Residuals**
 
 Q-Q-plottet viser om residualene er normalfordelte ved å plotte de standardiserte residualene mot de teoretiske kvantilene for en normalfordeling.
-
 I alle modellene ser vi at noen punkter, spesielt i ytterkantene, avviker betydelig fra den teoretiske linjen.
 Dette indikerer at det er enkelte avvik eller “outliers” som ikke følger normalfordelingen.
-
 Modell 3 ser ut til å ha litt færre avvik enn de andre modellene, men det er fortsatt tegn på at noen residualer ikke er helt normalfordelte.
 
-**Scale-Location (Spread-Location) Plot**
+**Scale-Location**
 
 Dette plottet viser kvadratroten av de standardiserte residualene mot de tilpassede verdiene.
-En jevn fordeling av punktene langs null-linjen indikerer homoskedastisitet (lik varians).
-
-I alle modellene ser vi en svak trend der variansen øker med de tilpassede verdiene, noe som indikerer at det kan være heteroskedastisitet (ulik varians).
-
-Modell 3 ser igjen litt bedre ut enn Nullmodellen og Modell 2, men heteroskedastisitet kan fortsatt være et problem.
+En jevn fordeling av punktene langs null-linjen indikerer homoskedastisitet .
+I alle modellene ser vi en svak trend der variansen øker med de tilpassede verdiene, noe som indikerer at det kan være heteroskedastisitet.
+Modell 3 ser igjen litt bedre ut enn modell 1 og modell 2, men heteroskedastisitet kan fortsatt være et problem.
 
 **Residuals vs Leverage**
 
-Dette plottet viser hvilke observasjoner som har stor innflytelse på modellen (leverage) og hvor store residualene er for disse observasjonene.
+Dette plottet viser hvilke observasjoner som har stor innflytelse på modellen og hvor store residualene er for disse observasjonene.
 Punkter som ligger langt fra de fleste dataene, og spesielt de som har høy leverage, kan være “influential points” som påvirker modellen betydelig.
-
 I alle modellene ser vi noen observasjoner med høy leverage, spesielt i ytterkantene.
 Cook’s distance-linjene hjelper oss å identifisere punkter med stor påvirkning.
 For eksempel ser vi noen observasjoner som kan påvirke modellens resultater betydelig.
-
 Modell 3 ser ut til å ha færre punkter med høy leverage enn de andre modellene, noe som kan indikere en bedre robusthet mot ekstreme observasjoner.
 
 **Konklusjon**
@@ -512,29 +533,38 @@ Samlet sett gir modell 3 den beste tilpasningen blant de tre, men det er fortsat
 Den har en jevnere fordeling i Residuals vs Fitted og færre punkter med høy leverage sammenlignet med de andre modellene, noe som indikerer bedre tilpasning.
 Men normalitet og homoskedastisitet er fortsatt utfordrende for alle modellene, noe som tyder på at det kan være rom for videre forbedring, eventuelt med alternative modeller eller transformasjoner av variablene.
 
-# **5.0 Simultan test på tids-dummiene**
+# 5.0 Simultan test på tids-dummiene
 
-Videre skal vi bruke en simultan test på tids-dummiene for å avgjøre om vi trenger disse i modellen.
+Videre skal vi bruke en simultan test på tids-dummiene i hver av de hedoniske modellene for å avgjøre om vi trenger de.
 
 ```{r}
 #| echo: false
-# Simultan test på tids-dummiene for Model 1
-test_result1 <- linearHypothesis(model1, matchCoefs(model1, "year_month"), white.adjust = "hc3")
-print("Resultat for Model 1:")
-print(test_result1)
+#| label: fig-6
+#| fig-cap: Simultan test på tids-dummiene for Modell 1
+test_mod1 <- linearHypothesis(model1, matchCoefs(model1, "year_month"), white.adjust = "hc3")
 
-# Simultan test på tids-dummiene for Model 2
-test_result2 <- linearHypothesis(model2, matchCoefs(model2, "year_month"), white.adjust = "hc3")
-print("Resultat for Model 2:")
-print(test_result2)
-
-# Simultan test på tids-dummiene for Model 3
-test_result3 <- linearHypothesis(model3, matchCoefs(model3, "year_month"), white.adjust = "hc3")
-print("Resultat for Model 3:")
-print(test_result3)
+print(test_mod1)
 ```
 
-## **5.1 Model 1**
+```{r}
+#| echo: false
+#| label: fig-7
+#| fig-cap: Simultan test på tids-dummiene for Modell 2
+test_mod2 <- linearHypothesis(model2, matchCoefs(model2, "year_month"), white.adjust = "hc3")
+print(test_mod2)
+
+```
+
+```{r}
+#| echo: false
+#| label: fig-8
+#| fig-cap: Simultan test på tids-dummiene for Modell 3
+test_mod3 <- linearHypothesis(model3, matchCoefs(model3, "year_month"), white.adjust = "hc3")
+
+print(test_mod3)
+```
+
+**Model 1**
 
 **F-verdi**: 5.717
 
@@ -543,7 +573,7 @@ print(test_result3)
 For Model 1 indikerer den lave p-verdien (p \< 0.001) at vi kan avvise nullhypotesen om at alle tids-dummiene samlet er lik null.
 Dette betyr at tids-dummiene har en signifikant effekt på modellens forklaringskraft, og de bør inkluderes i modellen.
 
-## **5.2 Model 2**
+**Model 2**
 
 **F-verdi**: 8.2016
 
@@ -552,7 +582,7 @@ Dette betyr at tids-dummiene har en signifikant effekt på modellens forklarings
 I Model 2 er p-verdien også svært lav, noe som igjen betyr at vi kan avvise nullhypotesen.
 Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bør beholdes.
 
-## **5.3 Model 3**
+**Model 3**
 
 **F-verdi**: 9.1943
 
@@ -560,13 +590,13 @@ Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bø
 
 For Model 3 er resultatet det samme: den lave p-verdien indikerer at tids-dummiene er signifikante for å forklare variasjonen i boligprisene, og derfor bør tids-dummiene inkluderes i modellen.
 
-## **5.4 Konklusjon**
+**Konklusjon**
 
 For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som indikerer at tids-dummiene samlet sett har en signifikant effekt på modellene.
-Med andre ord, **tids-dummiene bør inkluderes i alle modellene** fordi de bidrar til å forklare variasjonen i boligprisene over tid.
+Med andre ord, tids-dummiene bør inkluderes i alle modellene fordi de bidrar til å forklare variasjonen i boligprisene over tid.
 Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette datasettet.
 
-# 6.0 Spatial Regressions
+# **6.0 Spatial Regressions**
 
 Vår guppe sitt datasett kc_house_data_4242.gpkg, laster det ned.
 
@@ -750,28 +780,30 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
                   data = data_with_area_vars, listw = lw3)
 ```
 
--   
-
-    ```{r}
-    #| echo: false
-    #| output: false
-    summary(SEM)
-    ```
-
-    ```{r}
-    #| echo: false
-    #| output: false
-    # SLX-modell (Spatial Lag of X)
-    SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
-                    andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
-                    andel_andre_alene + andel_blandet, 
-                    data = data_with_area_vars, listw = lw3, type = "SLX")
-    ```
+```{r}
+#| echo: false
+#| output: false
+summary(SEM)
+```
 
 ```{r}
 #| echo: false
 #| output: false
-summary(SLX)
+# SLX-modell (Spatial Lag of X)
+SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+                andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
+                andel_andre_alene + andel_blandet, 
+                data = data_with_area_vars, listw = lw3, type = "SLX")
+```
+
+```{r}
+#| echo: false
+#| output: false
+# SLX-modell (Spatial Lag of X)
+SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
+                andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
+                andel_andre_alene + andel_blandet, 
+                data = data_with_area_vars, listw = lw3, type = "SLX")
 ```
 
 **Likelihood Ratio Test:**
@@ -867,7 +899,7 @@ Dette indikerer at SLX-modellen er mindre effektiv når det gjelder å fjerne sp
 Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon best, med SEM som en lett overlegen modell, mens **OLS** sliter mest med å håndtere de romlige effektene.
 **SLX-modellen** klarer å redusere noe av den spatial avhengigheten, men ikke i like stor grad som SEM og SDEM.
 
-# 7.0 Diskusjon av resultatene
+# **7.0 Diskusjon av resultatene**
 
 For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer.
 Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.
@@ -1243,7 +1275,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg.
     Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.
 
-# 8.0 Konklusjon
+# **8.0 Konklusjon**
 
 Den hedoniske boligprismodellen gir innsikt i hvordan boligkjøpere verdsetter ulike boligelementer, og ved å anvende romlige modeller som SAR, SEM, SLX og SDEM får vi bedre forståelse av de økonomiske effektene av både lokale og globale romlige forhold.
 Analysene viser at boligens areal (sqft_living) er konsekvent positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg.

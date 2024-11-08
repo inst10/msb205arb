@@ -365,19 +365,32 @@ model2 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + di
 model3 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + dist_cbd[, 1] + EHD_percen + year_month, data = tracts10_join)
 ```
 
-En regresjonstabell for de tre modellene er gitt i @tbl-models-comparison .
-T-verdiene er gitt i parantes under koeffisientene i tabellen.
-En høy t-verdi indikerer at koeffisienten er signifikant, noe som betyr at variabelen trolig har en reell effekt på boligprisene.
-I tabellen ser vi at variablene bedrooms, sqft_living, sqft_lot har høye t-verdier i alle modellene, noe som tyder på at de er sterke og signifikante forklaringsvariabler.
-Floors har svak t-verdi i modell 1, men sterke t-verdier i modell 2 og modell 3.
-Vi ser også at dist_CBD, transporta, poverty og EHD også har høye t-verdier i de modellene de inkluderes.
-Enkelte tidsdummier har relativt lave t-verdier, noe som tyder på at deres effekt på boligprisen er svakere og kan være mindre pålitelig.
+En regresjonstabell for de tre hedoniske modellene er gitt i @tbl-1 .
+I modell 1, som kun inkluderer huskarakteristika og tidsdummier, er antall soverom negativt assosiert med boligprisene (-59,606.36), boliger med flere soverom har lavere priser.
+Antall bad har en positiv effekt (6,795.04), og større boareal øker prisen (315.57).
+Tomtestørrelse har en negativ effekt på -0.399, mens antall etasjer ikke har en signifikant innvirkning på prisene.
+T-verdiene for huskarakteristikaene er alle høye, noe som indikerer at disse er signifikante, mens antall etasjer ikke er signifikant (t-verdi er lav).
+Når det gjelder tidsdummier, viser resultatene at prisene varierer betydelig fra måned til måned, med noen måneder som har positive effekter på prisen, mens andre har en negativ effekt.
+Det er få av tidsdummiene som er signifikante, noe som gjelder for alle modellene.
+
+@tbl-1 viser at i modell 2, som inkluderer distanse til CBD, transport og fattigdom, har boliger lengre unna sentrum lavere priser (-9,749.34), mens dårligere transport og høyere fattigdom reduserer boligprisene (-23,895.01 og -7,491.91).
+T-verdiene for disse variablene er høye, noe som betyr at de har en signifikant innvirkning på boligprisene.
+Resultatene viser også at flere soverom (-49,195.38) reduserer prisen, mens flere bad (19,338.31) og større boareal (294.54) øker prisen.
+Større tomt (0.43) har også en positiv effekt, men med mindre innvirkning enn boareal.
+Flere etasjer (-22,766.37) ser ut til å redusere prisen.
+Alle koeffisientene for huskrakteristika har høy T-verdi.
+Tidsdummiene for 2015 viser igjen variasjon i boligprisene.
+
+@tbl-1 viser at i modell 3 som inkluderer EHD-indeksen, er dårligere miljøforhold assosiert med lavere boligpriser (-2,575.05).
+T-verdien for miljøindeksen er relativt høy, som indikerer at den er signifikant.
+De andre koeffisientene for huskarakteristika, som soverom, bad, boareal, og tomtestørrelse, er stort sett konsistente med de tidligere modellene, og har signifikante t-verdier..
+Tidsdummiene i modell 3 viser også variasjon i boligprisene gjennom året, med noen måneder som har en positiv effekt på prisene, mens andre måneder har en negativ effekt på prisene.
 
 ```{r}
 #| echo: false
 #| ft.arraystretch: 0.9
-#| label: tbl-models-comparison
-#| tbl-cap: "Regresjonstabell"
+#| label: tbl-1
+#| tbl-cap: "Tabell 1: Regresjonstabell for de tre ulike hedoniske modellene"
 
 model1 <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + year_month, data = tracts10_join)
 

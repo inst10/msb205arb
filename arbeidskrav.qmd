@@ -420,7 +420,7 @@ T-verdien for miljøindeksen er relativt høy, som indikerer at den er signifika
 De andre koeffisientene for huskarakteristika, som soverom, bad, boareal, og tomtestørrelse, er stort sett konsistente med de tidligere modellene, og har signifikante t-verdier..
 Tidsdummiene i modell 3 viser også variasjon i boligprisene gjennom året, med noen måneder som har en positiv effekt på prisene, mens andre måneder har en negativ effekt på prisene.
 
-## 4.2 Sammenligning av de tre modellene Hvilken er best?
+## 4.2 Sammenligning av de tre modellene - Hvilken er best?
 
 **R² og justert R²**
 
@@ -533,38 +533,13 @@ Samlet sett gir modell 3 den beste tilpasningen blant de tre, men det er fortsat
 Den har en jevnere fordeling i Residuals vs Fitted og færre punkter med høy leverage sammenlignet med de andre modellene, noe som indikerer bedre tilpasning.
 Men normalitet og homoskedastisitet er fortsatt utfordrende for alle modellene, noe som tyder på at det kan være rom for videre forbedring, eventuelt med alternative modeller eller transformasjoner av variablene.
 
-# 5.0 Simultan test på tids-dummiene
+# **5.0 Simultan test på tids-dummiene**
 
 Videre skal vi bruke en simultan test på tids-dummiene i hver av de hedoniske modellene for å avgjøre om vi trenger de.
 
-```{r}
-#| echo: false
-#| label: fig-6
-#| fig-cap: Simultan test på tids-dummiene for Modell 1
-test_mod1 <- linearHypothesis(model1, matchCoefs(model1, "year_month"), white.adjust = "hc3")
+## 5.1 Model 1
 
-print(test_mod1)
-```
-
-```{r}
-#| echo: false
-#| label: fig-7
-#| fig-cap: Simultan test på tids-dummiene for Modell 2
-test_mod2 <- linearHypothesis(model2, matchCoefs(model2, "year_month"), white.adjust = "hc3")
-print(test_mod2)
-
-```
-
-```{r}
-#| echo: false
-#| label: fig-8
-#| fig-cap: Simultan test på tids-dummiene for Modell 3
-test_mod3 <- linearHypothesis(model3, matchCoefs(model3, "year_month"), white.adjust = "hc3")
-
-print(test_mod3)
-```
-
-**Model 1**
+@fig-6 viser resultatene fra en simultantest på tids-dummiene i modell 1.
 
 **F-verdi**: 5.717
 
@@ -573,7 +548,38 @@ print(test_mod3)
 For Model 1 indikerer den lave p-verdien (p \< 0.001) at vi kan avvise nullhypotesen om at alle tids-dummiene samlet er lik null.
 Dette betyr at tids-dummiene har en signifikant effekt på modellens forklaringskraft, og de bør inkluderes i modellen.
 
-**Model 2**
+```{r}
+#| echo: false
+#| label: fig-6
+#| fig-cap: Simultan test på tids-dummiene for Modell 1
+test_mod1 <- linearHypothesis(model1, matchCoefs(model1, "year_month"), white.adjust = "hc3")
+
+test_mod1_table <- as.data.frame(test_mod1)
+
+table_data <- data.frame(
+  Model = c("Restricted Model", "Model 1"),
+  `Res.Df` = c(21194, 21182),  
+  Df = c(NA, 12),  
+  F = c(NA, 5.717), 
+  `Pr(>F)` = c(NA, 6.082e-10),  
+  Significance = c(NA, "***")
+)
+
+table_data %>%
+  flextable() %>%
+  set_header_labels(
+    Model = "Model Description",
+    `Res.Df` = "Res. Df",
+    Df = "Df",
+    F = "F-Statistic",
+    `Pr(>F)` = "P-Value",
+    Significance = "Significance"
+  )
+```
+
+## 5.2 Modell 2
+
+@fig-7 viser resultatene fra en simultantest på tids-dummiene i modell 2.
 
 **F-verdi**: 8.2016
 
@@ -582,7 +588,39 @@ Dette betyr at tids-dummiene har en signifikant effekt på modellens forklarings
 I Model 2 er p-verdien også svært lav, noe som igjen betyr at vi kan avvise nullhypotesen.
 Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bør beholdes.
 
-**Model 3**
+```{r}
+#| echo: false
+#| label: fig-7
+#| fig-cap: Simultan test på tids-dummiene for Modell 2
+test_mod2 <- linearHypothesis(model2, matchCoefs(model2, "year_month"), white.adjust = "hc3")
+
+test_mod2_table <- as.data.frame(test_mod2)
+
+table_data <- data.frame(
+  Model = c("Restricted Model", "Model 2"),
+  `Res.Df` = c(21191, 21179),  
+  Df = c(NA, 12),  
+  F = c(NA, 8.2016), 
+  `Pr(>F)` = c(NA, 1.245e-15),  
+  Significance = c(NA, "***")
+)
+
+table_data %>%
+  flextable() %>%
+  set_header_labels(
+    Model = "Model Description",
+    `Res.Df` = "Res. Df",
+    Df = "Df",
+    F = "F-Statistic",
+    `Pr(>F)` = "P-Value",
+    Significance = "Significance"
+  )
+
+```
+
+## 5.3 Modell 3
+
+@fig-8 viser resultatene fra en simultantest på tids-dummiene i modell 3.
 
 **F-verdi**: 9.1943
 
@@ -590,7 +628,34 @@ Tids-dummiene har en signifikant effekt på boligprisene i denne modellen og bø
 
 For Model 3 er resultatet det samme: den lave p-verdien indikerer at tids-dummiene er signifikante for å forklare variasjonen i boligprisene, og derfor bør tids-dummiene inkluderes i modellen.
 
-**Konklusjon**
+```{r}
+#| echo: false
+#| label: fig-8
+#| fig-cap: Simultan test på tids-dummiene for Modell 3
+test_mod3 <- linearHypothesis(model3, matchCoefs(model3, "year_month"), white.adjust = "hc3")
+
+test_mod3_table <- as.data.frame(test_mod3)
+
+table_data <- data.frame(
+  Model = c("Restricted Model", "Model 3"),
+  `Res.Df` = c(21192, 21180),  
+  Df = c(NA, 12),  
+  F = c(NA, 9.1943), 
+  `Pr(>F)` = c(NA, 2.2e-16),  
+  Significance = c(NA, "***")
+)
+
+table_data %>%
+  flextable() %>%
+  set_header_labels(
+    Model = "Model Description",
+    `Res.Df` = "Res. Df",
+    Df = "Df",
+    F = "F-Statistic",
+    `Pr(>F)` = "P-Value",
+    Significance = "Significance"
+  )
+```
 
 For alle tre modellene er p-verdiene ekstremt lave, langt under 0.05, noe som indikerer at tids-dummiene samlet sett har en signifikant effekt på modellene.
 Med andre ord, tids-dummiene bør inkluderes i alle modellene fordi de bidrar til å forklare variasjonen i boligprisene over tid.
@@ -601,6 +666,7 @@ Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette dat
 Vår guppe sitt datasett kc_house_data_4242.gpkg, laster det ned.
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 data <- st_read("MandD/kc_house_data_4242.gpkg")
@@ -609,6 +675,7 @@ data <- st_read("MandD/kc_house_data_4242.gpkg")
 Legger til områdevariablene til det reduserte datasettet
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 library(sf)
@@ -624,6 +691,7 @@ data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
 Modellen vi vil bruke:
 
 ```{r}
+#| eval: false
 #| echo: false
 # Kjøre en lineær modell (OLS) med områdevariabler
 model_ols <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
@@ -667,6 +735,7 @@ Dette kan gi innsikt i hvordan befolkningssammensetningen i områder kan påvirk
 **Videre generer vi vektmatrise ut fra k=3 og k=10 nærmeste naboer**
 
 ```{r}
+#| eval: false
 #| echo: false
 library(spdep)
 
@@ -685,6 +754,7 @@ lw10 <- nb2listw(nb10, style = "W")
 **Utfører Lagrange Multiplikator-testene**
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 library(spdep)
@@ -707,6 +777,7 @@ Bare midlertidig overskrift for å huska denna koden.....
 *Detta sto i oppgaveteksten: "Vi vil også benytte Anselin ([1988](https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988)) angrepsmåte (SAR, SEM og lm (OLS))) med Lagrange Multiplier Tests (gjøres enkelt vha. `lm.LMtests(vår_lm, listw = vår_w, test="all")` fra pakken `spdep`. **Vi vil også estimere en SLM (SAR) modell og finne impacts for denne."*** \<- Pørvde på dette her:
 
 ```{r}
+#| eval: false
 # Opprett SAR-modellen
 sar_model <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
                          andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene +
@@ -753,24 +824,28 @@ Dette kan inkludere bredere økonomiske forhold, sosioøkonomiske mønstre, elle
 Det globale aspektet understrekes av det faktum at spatial avhengighet observeres både blant nærmeste naboer og over større avstander (k=10), noe som bekrefter at romlige effekter har en vidstrakt innvirkning på boligmarkedet.
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 SDEM <- errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, Durbin = TRUE)
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 summary(SDEM)
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 summary(impacts(SDEM), zstats = TRUE)
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 # Spatial Error Model (SEM)
@@ -781,12 +856,14 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 summary(SEM)
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 # SLX-modell (Spatial Lag of X)
@@ -797,6 +874,7 @@ SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 # SLX-modell (Spatial Lag of X)
@@ -827,6 +905,7 @@ Selv om SEM-modellen også gir en betydelig forbedring i forhold til OLS og SDEM
 **Bergener residualene for modellene:**
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 # Beregn residualene for OLS-modellen
@@ -846,6 +925,7 @@ residuals_slx <- residuals(SLX)
 **Bruker "moran plot" på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.**
 
 ```{r}
+#| eval: false
 #| echo: false
 library(spdep)
 
@@ -918,6 +998,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     **OLS:**
 
     ```{r}
+    #| eval: false
     #| echo: false
     # Eksempel på plot for 'sqft_living' fra OLS-modellen
     ggplot(data_with_area_vars, aes(x = sqft_living, y = price)) +
@@ -956,6 +1037,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     **SEM:**
 
     ```{r}
+    #| eval: false
     #| echo: false
     # Beregne prediksjoner fra SEM-modellen
     predicted_sem <- predict(SEM, newdata = data_with_area_vars)
@@ -963,6 +1045,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     #| echo: false
     # Plot med faktiske data og SEM prediksjoner
     ggplot(data_with_area_vars, aes(x = sqft_living)) +
@@ -998,6 +1081,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ***Her prøver jeg å illustrere SLX men får det ikke til.....***
 
     ```{r}
+    #| eval: false
     # Sjekk hvilke variabler som finnes i numeric_vars og relevant_coefficients
     print("Variabler i numeric_vars:")
     print(numeric_vars)
@@ -1018,6 +1102,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Skriv ut alle kolonnenavn i data_with_area_vars
     print("Kolonnenavn i data_with_area_vars:")
     print(colnames(data_with_area_vars))
@@ -1028,6 +1113,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Fjern prefikset 'lag.' fra navnene i slx_coefficients
     names(slx_coefficients) <- gsub("^lag\\.", "", names(slx_coefficients))
 
@@ -1050,6 +1136,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Begrens numeric_vars til variablene som også finnes i relevant_coefficients
     numeric_vars <- intersect(numeric_vars, names(relevant_coefficients))
 
@@ -1068,6 +1155,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Hent koeffisientene fra SLX-modellen
     slx_coefficients <- coef(SLX)
 
@@ -1094,6 +1182,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ***Her prøver jeg å illustrere SDEM men får det ikke til.....***
 
     ```{r}
+    #| eval: false
     # Sjekk at SDEM er tilgjengelig og at riktig vektingsliste brukes
     if(exists("SDEM") && exists("lw3")) {
         predicted_sdem <- predict(SDEM, newdata = data_with_area_vars, listw = lw3)
@@ -1104,6 +1193,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     library(ggplot2)
 
     # Plot som viser faktiske priser og SDEM prediksjoner
@@ -1117,6 +1207,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Generer prediksjoner fra SDEM-modellen
     if (exists("SDEM")) {
       tryCatch({
@@ -1146,6 +1237,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Ekstraher koeffisientene fra SDEM-modellen
     sdem_coefficients <- coef(SDEM)
 
@@ -1179,6 +1271,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
+    #| eval: false
     # Hent koeffisientene fra SDEM-modellen
     sdem_coefficients <- coef(SDEM)
 

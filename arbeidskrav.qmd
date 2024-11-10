@@ -10,6 +10,7 @@ editor: visual
 #| output: false
 #| warning: false
 library(tidyverse)
+library(knitr)
 library(lubridate)
 library(sf)
 library(here)
@@ -663,83 +664,52 @@ Dette betyr at tidsvariasjon er viktig for å modellere boligprisene i dette dat
 
 # **6.0 Spatial Regressions**
 
-Vår guppe sitt datasett kc_house_data_4242.gpkg, laster det ned.
+Videre skal vi utføre «spatial regressions» på et subset på ca.
+2000 observasjoner fra det totale datasettet.
+Vi skal finne ut hvilken romlig regresjonsmodell som best fanger opp de romlige effektene.
+Vi skal se på valg av modell vha.
+metodene til både Anselin (1988) og LeSage (n.d.).
 
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 data <- st_read("MandD/kc_house_data_4242.gpkg")
 ```
 
-Legger til områdevariablene til det reduserte datasettet
-
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
-library(sf)
-library(dplyr)
 
-# Velger nødvendige områdevariabler fra 'tracts10'
+# Legger til områdevariabler fra 'tracts10'
 tracts10_selected <- tracts10 %>% select(andel_hvit_alene, andel_svart_alene, andel_asiatisk_alene, andel_andre_alene, andel_blandet)
 
 # Slår sammen 'data' med områdevariablene fra 'tracts10'
 data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
 ```
 
-Modellen vi vil bruke:
+## 6.1 OLS-modell og "Spatial effects"
+
+Vi har formulert modellen vi ønsker å bruke og har kjørt den som en OLS-modell.
+Vi skal se nærmere på residualene i denne modellen for å avgjøre om vi har uforklarte spatial effects i residualene.
 
 ```{r}
-#| eval: false
 #| echo: false
 # Kjøre en lineær modell (OLS) med områdevariabler
 model_ols <- lm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                 andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
                 andel_andre_alene + andel_blandet, data = data_with_area_vars)
-
-summary(model_ols)
 ```
 
-Kommentar til OLS modellen:
-
-**Koeffisienter,** kun tatt med de vi tenker er relevante
-
-• **Bedrooms**: Koeffisienten for antall soverom (-54,050) er signifikant (p \< 0.001) og negativ.
-Dette kan virke kontraintuitivt, men det kan være et tegn på at større boliger med flere soverom har andre karakteristikker som påvirker prisen (som mindre stuer eller eldre boliger).
-
-• **Sqft_living**: Størrelsen på boligen (kvadratfot boareal) har en sterk positiv og signifikant effekt på pris (β = 308.1, p \< 0.001).
-Dette er forventet, ettersom større boliger vanligvis er dyrere.
-
-**Sqft_lot:** Størrelsen på tomten har en liten, men signifikant negativ effekt på prisen (β = -0.5161, p \< 0.001).
-Dette kan tyde på at større tomter ikke nødvendigvis øker prisen, kanskje fordi andre faktorer som beliggenhet veier tyngre.
-
-**Andel hvit alene**: Denne variabelen er positiv og signifikant (β = 452,600, p = 0.033), noe som indikerer at i områder hvor en større andel av befolkningen er hvit alene, har boliger en tendens til å ha høyere priser.
-
-**Andel asiatisk alene**: Denne variabelen har en positiv og signifikant effekt (β = 498,400, p = 0.021), noe som indikerer høyere boligpriser i områder med større andel av asiatisk befolkning.
-
-**Modellens forklaringskraft:**
-
-**R²**: Den multiple R² er 0.5837, noe som betyr at modellen forklarer omtrent 58.4 % av variasjonen i boligprisene.
-Dette er en moderat god forklaringskraft for en slik modell, men det er fortsatt en betydelig mengde variasjon i prisene som ikke forklares av modellen.
-
-**F-test**: F-testen er signifikant (p \< 2.2e-16), noe som indikerer at modellen som helhet er statistisk signifikant og at minst én av variablene har en effekt på boligprisene.
-
-**Samlet vurdering:**
-
-Modellen gir rimelig gode forklaringer på hvordan noen boligkarakteristikker og demografiske variabler påvirker prisene, men det er klart at ikke alle variablene er like viktige.
-**Sqft_living** er den sterkeste driveren av boligprisene, mens variabler som antall etasjer og bad ikke ser ut til å spille en stor rolle.
-De demografiske variablene gir noen interessante funn, spesielt effekten av andel hvit alene og andel asiatisk alene, som begge er positive og signifikante.
-Dette kan gi innsikt i hvordan befolkningssammensetningen i områder kan påvirke boligprisene.
-
-**Videre generer vi vektmatrise ut fra k=3 og k=10 nærmeste naboer**
+```{r}
+#| echo: false
+# Beregn residualene fra modellen
+residuals_ols <- residuals(model_ols)
+```
 
 ```{r}
-#| eval: false
 #| echo: false
-library(spdep)
 
-# Generer vektmatriser for k = 3 og k = 10 nærmeste naboer
+# Vektmatriser for k = 3 og k = 10 nærmeste naboer
 coords <- st_coordinates(data_with_area_vars)
 knn3 <- knearneigh(coords, k = 3)
 knn10 <- knearneigh(coords, k = 10)
@@ -751,33 +721,60 @@ lw3 <- nb2listw(nb3, style = "W")
 lw10 <- nb2listw(nb10, style = "W")
 ```
 
+```{r}
+# Utfør Moran's I-test
+moran_test_ols_k3 <- lm.morantest(model_ols, lw3) 
+
+moran_test_ols_k10 <- lm.morantest(model_ols, lw10) 
+
+print(moran_test_ols_k3)
+print(moran_test_ols_k10)
+
+```
+
+Tolkning av resultatene fra lm.morans testene!
+
+```{r}
+# Visualiser Moran Plot for OLS-residualene
+moran.plot(residuals_ols, listw = lw3, main = "Moran Plot for OLS Residualer (k = 3)")
+moran.plot(residuals_ols, listw = lw10, main = "Moran Plot for OLS Residualer (k = 10)")
+
+```
+
+Tolkning av plottene!
+
+## 6.2 Anselin
+
+Bruk Anselin ([1988](https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988)) sin teknikk med Lagrange Multiplikator test vha.
+`lm.LMtests()` og diskuter hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
+
 **Utfører Lagrange Multiplikator-testene**
 
 ```{r}
-#| eval: false
 #| echo: false
-#| output: false
-library(spdep)
 
 # Lagrange Multiplikator tester med k = 3
 lm_tests3 <- lm.LMtests(model_ols, lw3, test = "all")
 print("Lagrange Multiplikator-tester med k=3")
 print(lm_tests3)
 
+```
+
+```{r}
+#| echo: false
 # Lagrange Multiplikator tester med k = 10
 lm_tests10 <- lm.LMtests(model_ols, lw10, test = "all")
 print("Lagrange Multiplikator-tester med k=10")
 print(lm_tests10)
 ```
 
-## ? SAR - modell .... ?
+### ? SAR - modell .... ?
 
 Bare midlertidig overskrift for å huska denna koden.....
 
 *Detta sto i oppgaveteksten: "Vi vil også benytte Anselin ([1988](https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988)) angrepsmåte (SAR, SEM og lm (OLS))) med Lagrange Multiplier Tests (gjøres enkelt vha. `lm.LMtests(vår_lm, listw = vår_w, test="all")` fra pakken `spdep`. **Vi vil også estimere en SLM (SAR) modell og finne impacts for denne."*** \<- Pørvde på dette her:
 
 ```{r}
-#| eval: false
 # Opprett SAR-modellen
 sar_model <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
                          andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene +
@@ -812,7 +809,7 @@ Dette indikerer at **SEM-modellen passer bedre** enn SAR-modellen, ettersom de r
 Samlet sett peker Lagrange Multiplikator-testene mot at en **Spatial Error Model (SEM)** vil være den mest passende modellen for dette datasettet.
 En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.
 
-### 
+## 6.3 LeSage
 
 **Lokalt eller globalt fenomen?**
 
@@ -823,29 +820,29 @@ SEM-modellen fanger opp den romlige avhengigheten som eksisterer i feilleddet, n
 Dette kan inkludere bredere økonomiske forhold, sosioøkonomiske mønstre, eller infrastrukturelle påvirkninger som fanges opp i feilleddet.
 Det globale aspektet understrekes av det faktum at spatial avhengighet observeres både blant nærmeste naboer og over større avstander (k=10), noe som bekrefter at romlige effekter har en vidstrakt innvirkning på boligmarkedet.
 
+### 6.3.1 SDEM
+
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 SDEM <- errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, Durbin = TRUE)
 ```
 
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 summary(SDEM)
 ```
 
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 summary(impacts(SDEM), zstats = TRUE)
 ```
 
+### 6.3.2 SEM
+
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 # Spatial Error Model (SEM)
@@ -856,14 +853,14 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
 ```
 
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 summary(SEM)
 ```
 
+### 6.3.3 SLX
+
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 # SLX-modell (Spatial Lag of X)
@@ -874,7 +871,6 @@ SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 ```
 
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 # SLX-modell (Spatial Lag of X)
@@ -883,6 +879,8 @@ SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
                 andel_andre_alene + andel_blandet, 
                 data = data_with_area_vars, listw = lw3, type = "SLX")
 ```
+
+### 6.3.4 Testing og sammenligning av de ulike modellene
 
 **Likelihood Ratio Test:**
 
@@ -902,10 +900,14 @@ Log-likelihood er også høyest for SLX-modellen (-25,683.28), som bekrefter at 
 Basert på AIC, log-likelihood, og likelihood ratio test ser SLX-modellen ut til å være den beste modellen for dette datasettet, siden den har den laveste AIC og høyeste log-likelihood.
 Selv om SEM-modellen også gir en betydelig forbedring i forhold til OLS og SDEM-modellen, indikerer AIC og log-likelihood at SLX-modellen gir den beste balansen mellom tilpasning og kompleksitet.
 
+## 6.4 Fjerner modellene "spatial effects"?
+
+Vi skal se nærmere på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.
+Vi ser kun på modellene for k=10 (10 nærmeste naboer).
+
 **Bergener residualene for modellene:**
 
 ```{r}
-#| eval: false
 #| echo: false
 #| output: false
 # Beregn residualene for OLS-modellen
@@ -998,7 +1000,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     **OLS:**
 
     ```{r}
-    #| eval: false
     #| echo: false
     # Eksempel på plot for 'sqft_living' fra OLS-modellen
     ggplot(data_with_area_vars, aes(x = sqft_living, y = price)) +
@@ -1037,7 +1038,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     **SEM:**
 
     ```{r}
-    #| eval: false
     #| echo: false
     # Beregne prediksjoner fra SEM-modellen
     predicted_sem <- predict(SEM, newdata = data_with_area_vars)
@@ -1045,7 +1045,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     #| echo: false
     # Plot med faktiske data og SEM prediksjoner
     ggplot(data_with_area_vars, aes(x = sqft_living)) +
@@ -1081,7 +1080,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ***Her prøver jeg å illustrere SLX men får det ikke til.....***
 
     ```{r}
-    #| eval: false
     # Sjekk hvilke variabler som finnes i numeric_vars og relevant_coefficients
     print("Variabler i numeric_vars:")
     print(numeric_vars)
@@ -1102,7 +1100,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Skriv ut alle kolonnenavn i data_with_area_vars
     print("Kolonnenavn i data_with_area_vars:")
     print(colnames(data_with_area_vars))
@@ -1113,7 +1110,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Fjern prefikset 'lag.' fra navnene i slx_coefficients
     names(slx_coefficients) <- gsub("^lag\\.", "", names(slx_coefficients))
 
@@ -1136,7 +1132,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Begrens numeric_vars til variablene som også finnes i relevant_coefficients
     numeric_vars <- intersect(numeric_vars, names(relevant_coefficients))
 
@@ -1155,7 +1150,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Hent koeffisientene fra SLX-modellen
     slx_coefficients <- coef(SLX)
 
@@ -1182,7 +1176,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ***Her prøver jeg å illustrere SDEM men får det ikke til.....***
 
     ```{r}
-    #| eval: false
     # Sjekk at SDEM er tilgjengelig og at riktig vektingsliste brukes
     if(exists("SDEM") && exists("lw3")) {
         predicted_sdem <- predict(SDEM, newdata = data_with_area_vars, listw = lw3)
@@ -1193,8 +1186,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
-    library(ggplot2)
 
     # Plot som viser faktiske priser og SDEM prediksjoner
     ggplot(data_with_area_vars, aes(x = sqft_living)) +
@@ -1207,7 +1198,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Generer prediksjoner fra SDEM-modellen
     if (exists("SDEM")) {
       tryCatch({
@@ -1237,7 +1227,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Ekstraher koeffisientene fra SDEM-modellen
     sdem_coefficients <- coef(SDEM)
 
@@ -1271,7 +1260,6 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
     ```
 
     ```{r}
-    #| eval: false
     # Hent koeffisientene fra SDEM-modellen
     sdem_coefficients <- coef(SDEM)
 

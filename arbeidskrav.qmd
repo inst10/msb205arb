@@ -1032,7 +1032,6 @@ Samlet sett understreker analysen viktigheten av å bruke romlige modeller for �
 
 ❗️Oversikt ❗️
 
--   SAR -modellen -\> Må vi gjøre detta gjennom hele oppgaven?
 -   Refere til modellene
+
 -   Finne relevante kilder (eventuelt bare hennvise til de kildene Arnstein bruker i oppgaveteksten)
--   Klare å illustrer grafisk SLX og SDEM (og eventuelt SAR då...)

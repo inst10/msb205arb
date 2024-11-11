@@ -732,7 +732,17 @@ print(moran_test_ols_k10)
 
 ```
 
-Tolkning av resultatene fra lm.morans testene!
+Resultatene fra Moran’s I-testen indikerer at det er en signifikant romlig autokorrelasjon i residualene fra regresjonsmodellen.
+For Moran’s I med lw3 fikk vi en observert Moran I-verdi på 0.442 med en standard deviasjon på 25.384 og en p-verdi på mindre enn 2.2e-16.
+For Moran’s I med lw10 var den observerte Moran I-verdien 0.390 med en standard deviasjon på 40.616 og en p-verdi på mindre enn 2.2e-16.
+Begge testene gir svært lave p-verdier, noe som betyr at vi kan forkaste nullhypotesen om ingen romlig autokorrelasjon i residualene.
+
+Moran’s I-verdiene for både lw3 og lw10 er positive og signifikante, noe som indikerer at residualene fra modellen er spatialt korrelerte, altså at det er en tendens til at områder med like restverdier (høye eller lave) grupperer seg sammen i rommet.
+Dette betyr at det er spatial avhengighet som modellen ikke har klart å fange opp.
+Den romlige korrelasjonen er noe sterkere for lw3 (nærmeste tre naboer) sammenlignet med lw10 (nærmeste ti naboer), noe som tyder på at den spatial korrelasjonen kan være mer lokal i naturen.
+
+Dette funnet indikerer at modellen ikke tilstrekkelig fanger opp alle de romlige forholdene som påvirker boligprisene.
+For å håndtere denne romlige autokorrelasjonen bør det vurderes å bruke romlige regresjonsmodeller, som Spatial Lag Model (SLM) eller Spatial Error Model (SEM), som tar hensyn til den romlige avhengigheten.
 
 ```{r}
 # Visualiser Moran Plot for OLS-residualene
@@ -741,7 +751,20 @@ moran.plot(residuals_ols, listw = lw10, main = "Moran Plot for OLS Residualer (k
 
 ```
 
-Tolkning av plottene!
+Moran-plottene for OLS-residualene (k = 3 og k = 10) gir en visuell representasjon av romlig autokorrelasjon i modellens residualer.
+Moran-plottene viser forholdet mellom residualene (x-aksen) og de spatialt forsinkede residualene (y-aksen), og gjør det mulig å vurdere om det finnes systematiske romlige mønstre.
+
+**Moran-Plot for k = 3:**
+
+Moran-plottet for k = 3 indikerer en positiv romlig autokorrelasjon.
+Vi kan se at flere datapunkter ligger i kvadrantene som representerer lav-lav og høy-høy, noe som betyr at områder med høye restverdier tenderer til å være nær andre områder med høye restverdier, og tilsvarende for lave verdier.
+Den stigende trenden i plottet bekrefter også at det er en klar sammenheng mellom restverdiene og deres spatialt forsinkede motparter.
+
+**Moran-Plot for k = 10:**
+
+Moran-plottet for k = 10 viser en lignende trend som for k = 3, men sammenhengen ser noe svakere ut.
+Dette skyldes sannsynligvis at k = 10 inkluderer flere naboer, noe som utjevner den lokale romlige korrelasjonen.
+Den stigende linjen indikerer fortsatt at det er en positiv romlig autokorrelasjon, men denne effekten blir noe mindre markant når flere naboer inkluderes.
 
 ## 6.2 Anselin
 
@@ -760,6 +783,24 @@ print(lm_tests3)
 
 ```
 
+Kommentar:
+**OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
+Residualene fra OLS-modellen viser klare tegn på romlig autokorrelasjon, og dette betyr at en modell som tar hensyn til disse effektene vil være mer hensiktsmessig.
+
+**Spatial Error Model (SEM)**: Teststatistikken for RSerr og adjRSerr er høy, og begge testene er svært signifikante.
+Dette tyder på at romlig avhengighet primært eksisterer i errorleddene, noe som gjør SEM til en god kandidat for videre modellering.
+
+**Spatial Lag Model (SAR)**: Teststatistikken for RSlag og adjRSlag er også høy og signifikant, noe som indikerer at romlig avhengighet også finnes i selve avhengighetsforholdene i modellen.
+SAR-modellen vil derfor kunne være en god modell for å fange opp disse effektene.
+
+**Anbefaling:**
+
+Gitt resultatene fra Lagrange multiplikator-testene, synes både **SEM** og **SAR** å være aktuelle modeller for å håndtere de romlige avhengighetene.
+Valget mellom de to modellene avhenger av hvilken type romlig avhengighet som antas å være mest relevant:
+
+-   Hvis romlig avhengighet antas å påvirke feilleddene, er **SEM** den beste modellen.
+-   Hvis romlig avhengighet antas å være i den avhengige variabelens forhold til de forklarende variablene, vil **SAR** være mer hensiktsmessig.
+
 ```{r}
 #| echo: false
 # Lagrange Multiplikator tester med k = 10
@@ -768,43 +809,25 @@ print("Lagrange Multiplikator-tester med k=10")
 print(lm_tests10)
 ```
 
-### ? SAR - modell .... ?
+Kommentar:
 
-Bare midlertidig overskrift for å huska denna koden.....
+**OLS-modellen**: Gitt de svært signifikante p-verdiene fra alle testene, ser vi at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene.
+Residualene fra OLS-modellen viser tydelige tegn på romlig autokorrelasjon, noe som gjør at en annen modell er nødvendig.
 
-*Detta sto i oppgaveteksten: "Vi vil også benytte Anselin ([1988](https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988)) angrepsmåte (SAR, SEM og lm (OLS))) med Lagrange Multiplier Tests (gjøres enkelt vha. `lm.LMtests(vår_lm, listw = vår_w, test="all")` fra pakken `spdep`. **Vi vil også estimere en SLM (SAR) modell og finne impacts for denne."*** \<- Pørvde på dette her:
+**Spatial Error Model (SEM)**: RSerr og adjRSerr har de høyeste teststatistikkene og svært signifikante p-verdier.
+Dette tyder på at den romlige avhengigheten hovedsakelig ligger i errorleddene, og at en SEM derfor vil være en passende modell for videre analyse.
 
-```{r}
-# Opprett SAR-modellen
-sar_model <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
-                         andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene +
-                         andel_andre_alene,
-                         data = data_with_area_vars, listw = lw3)
+**Spatial Lag Model (SAR)**: RSlag og adjRSlag viser også signifikante resultater, men teststatistikkene er lavere sammenlignet med SEM.
+Dette kan indikere at selv om det er en romlig avhengighet i den avhengige variabelen, er denne effekten ikke like sterk som den romlige avhengigheten i errorleddene.
+SAR-modellen kan være et alternativ, men SEM virker å være mer relevant basert på testresultatene.
 
-# Bruk OLS-modellen for Lagrange Multiplikator tester
-lm_tests_sar3 <- lm.LMtests(model_ols, lw3, test = "all")
-print("Lagrange Multiplikator-tester for SAR-modellen med k=3:")
-print(lm_tests_sar3)
+**Anbefaling:**
 
-lm_tests_sar10 <- lm.LMtests(model_ols, lw10, test = "all")
-print("Lagrange Multiplikator-tester for SAR-modellen med k=10:")
-print(lm_tests_sar10)
-```
+Basert på resultatene fra Lagrange multiplikator-testene med k = 10, virker **Spatial Error Model (SEM)** å være det beste alternativet for å håndtere de romlige avhengighetene i dataene.
+Teststatistikken for RSerr og adjRSerr er høyere enn for RSlag og adjRSlag, noe som tyder på at romlig avhengighet primært er til stede i errorleddene.
+Dette betyr at en SEM-modell kan gi en bedre modelltilpasning enn SAR.
 
-Resultat:
-
-Basert på resultatene fra Lagrange Multiplikator-testene med både k=3 og k=10 nærmeste naboer, tyder resultatene på at det finnes betydelig spatial avhengighet i dataene.
-Dette fremgår av de ekstremt lave p-verdiene for alle testene (p \< 2.2e-16), noe som betyr at en vanlig OLS-modell ikke fanger opp alle romlige effekter.
-Vi må derfor vurdere en spatial modell som kan håndtere disse romlige avhengighetene bedre.
-
-For begge k-verdier (3 og 10), er både **LM-Error**-testen (RSerr) og **Robust LM-Error**-testen (adjRSerr) signifikante.
-Dette indikerer at en Spatial Error Model (SEM) kan være nødvendig, ettersom denne modellen tar hensyn til spatial avhengighet i feilene.
-Samtidig er **LM-Lagged**-testen (RSlag) og **Robust LM-Lagged**-testen (adjRSlag) også signifikante, noe som antyder at en Spatial Autoregressive Model (SAR) også kunne være egnet.
-
-Imidlertid, når vi sammenligner de robuste testene, har **Robust LM-Error**-testen en høyere teststatistikk enn **Robust LM-Lagged**-testen i begge tilfeller (k=3 og k=10).
-Dette indikerer at **SEM-modellen passer bedre** enn SAR-modellen, ettersom de romlige effektene ser ut til å påvirke feilleddet mer enn den avhengige variabelen direkte.
-
-**Konklusjon**
+**Konklusjon på k=3 og k=10**
 
 Samlet sett peker Lagrange Multiplikator-testene mot at en **Spatial Error Model (SEM)** vil være den mest passende modellen for dette datasettet.
 En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.
@@ -986,375 +1009,12 @@ Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon bes
 For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer.
 Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.
 
--   **Økonomisk tolkning av den hedoniske boligprismodellen**
+**Økonomisk tolkning av den hedoniske boligprismodellen**
 
-    Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
+-   Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
     Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper.
     I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene.
     For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
-
-    Vi kan illustrere denne tolkningen ved å lage en graf som viser sammenhengen mellom en boligs pris og noen utvalgte egenskaper.
-
-    **Grafisk presentasjon :**
-
-    **OLS:**
-
-    ```{r}
-    #| echo: false
-    # Eksempel på plot for 'sqft_living' fra OLS-modellen
-    ggplot(data_with_area_vars, aes(x = sqft_living, y = price)) +
-      geom_point(aes(color = "Actual Data"), alpha = 0.5) +
-      geom_smooth(method = "lm", formula = y ~ x, se = FALSE, color = "blue") +
-      labs(title = "Sammenheng mellom pris og boligstørrelse (sqft_living)",
-           x = "Boligstørrelse (sqft)", y = "Pris") +
-      theme_minimal()
-
-    # For å legge til flere modeller kan du beregne prediksjoner og legge disse til plottet
-    predicted_ols <- predict(model_ols, newdata = data_with_area_vars)
-    data_with_area_vars$predicted_ols <- predicted_ols
-
-    ggplot(data_with_area_vars, aes(x = sqft_living)) +
-      geom_point(aes(y = price), alpha = 0.5) +
-      geom_line(aes(y = predicted_ols, color = "OLS Model"), linewidth = 1) +
-      labs(title = "Effekt av sqft_living på pris i OLS-modellen",
-           x = "Boligstørrelse (sqft)", y = "Pris") +
-      scale_color_manual(values = c("OLS Model" = "blue")) +
-      theme_minimal()
-    ```
-
-    Begge disse grafene illustrerer sammenhengen mellom boligstørrelse målt i kvadratfot (sqft_living) og pris, men med ulike visuelle tilnærminger og fokus.
-    Den røde grafen viser faktiske datapunkter, noe som gir en klar visuell representasjon av spredningen og variasjonen i dataene.
-    Dette kan hjelpe oss med å forstå variasjonen i prisene og hvordan de fordeler seg over forskjellige størrelser på boliger.
-    Den blå grafen viser regresjonslinjen tydelig, noe som illustrerer den gjennomsnittlige effekten av boligstørrelse på pris som modellen estimerer.
-    Dette er nyttig for å fremheve modellens prediksjoner og vise hvor godt modellen passer med de faktiske dataene.
-
-    Resultatene fra OLS-modellen indikerer en betydelig romlig autokorrelasjon i residualene, noe som er bekreftet av Moran-plottet.
-    Dette plottet viser at residualene fra OLS-modellen har en klar clustering i både første og tredje kvadrant, noe som tyder på at feilene ikke er uavhengige, men snarere er romlig strukturert.
-    Denne romlige avhengigheten kan påvirke prediksjonene og indikere at OLS-modellen ikke er tilstrekkelig til å håndtere de romlige aspektene av dataene.
-
-    Grafen som viser “Effekt av sqft_living på pris i OLS-modellen” viser en tydelig lineær sammenheng mellom sqft_living og pris, men de spredte residualene antyder at det finnes ukjente faktorer som påvirker boligprisene.
-    I tillegg kan det observeres at avvik fra regresjonslinjen er til stede, noe som ytterligere underbygger behovet for en modell som kan ta hensyn til romlige effekter.
-
-    **SEM:**
-
-    ```{r}
-    #| echo: false
-    # Beregne prediksjoner fra SEM-modellen
-    predicted_sem <- predict(SEM, newdata = data_with_area_vars)
-    data_with_area_vars$predicted_sem <- predicted_sem
-    ```
-
-    ```{r}
-    #| echo: false
-    # Plot med faktiske data og SEM prediksjoner
-    ggplot(data_with_area_vars, aes(x = sqft_living)) +
-      geom_point(aes(y = price), alpha = 0.5, color = "gray") +  # faktiske priser
-      geom_line(aes(y = predicted_sem, color = "SEM Model"), linewidth = 1) +  # SEM prediksjoner
-      labs(title = "Effekt av sqft_living på pris i SEM-modellen",
-           x = "Boligstørrelse (sqft)", y = "Pris") +
-      scale_color_manual(values = c("SEM Model" = "red")) +  # Endre fargen for SEM linjen til rød
-      theme_minimal()
-
-    # Du kan også lage en graf som sammenligner OLS og SEM direkte
-    ggplot(data_with_area_vars, aes(x = sqft_living)) +
-      geom_point(aes(y = price), alpha = 0.5, color = "gray") +  # faktiske priser
-      geom_line(aes(y = predicted_ols, color = "OLS Model"), linewidth = 1) +  # OLS prediksjoner
-      geom_line(aes(y = predicted_sem, color = "SEM Model"), linewidth = 1) +  # SEM prediksjoner
-      labs(title = "Sammenligning av sqft_living-effekt på pris mellom OLS og SEM",
-           x = "Boligstørrelse (sqft)", y = "Pris") +
-      scale_color_manual(values = c("OLS Model" = "blue", "SEM Model" = "red")) +  # Tilpass fargene for hver modell
-      theme_minimal()
-    ```
-
-    Her ønsker vi å sammenligne OLS og SEM da dette gir grafene en dypere forståelse av hvordan boligprisene reagerer på endringer i boligens størrelse, samtidig som man tar hensyn til både ikke-romlige og romlige aspekter.
-
-    Resultatene fra SEM-modellen viser en klar forbedring sammenlignet med OLS-modellen, som fremgår tydelig i Moran-plottet for residualene.
-    Dette plottet indikerer en reduksjon i romlig autokorrelasjon, da residualene nå er mer spredt ut, med mindre clustering i de første og tredje kvadrantene.
-    Dette antyder at SEM-modellen har vært effektiv i å fange opp de romlige avhengighetene som OLS-modellen ikke klarte.
-
-    Grafen som illustrerer “Effekt av sqft_living på pris i SEM-modellen” bekrefter den positive sammenhengen mellom boligstørrelse og pris, men gir også inntrykk av at residualene er mer tilfeldig fordelt rundt regresjonslinjen.
-    Den flate linjen i Moran-plottet for SEM-residualene viser at romlig autokorrelasjon har blitt betydelig redusert, noe som tyder på at modellen har adressert de romlige effektene på en bedre måte enn OLS.
-
-    Disse funnene bekrefter at SEM-modellen er bedre rustet til å håndtere romlige effekter, og at den gir mer pålitelige estimater for boligpriser. 
-
-    ***Her prøver jeg å illustrere SLX men får det ikke til.....***
-
-    ```{r}
-    # Sjekk hvilke variabler som finnes i numeric_vars og relevant_coefficients
-    print("Variabler i numeric_vars:")
-    print(numeric_vars)
-
-    print("Variabler i relevant_coefficients:")
-    print(names(relevant_coefficients))
-
-    # Sjekk at relevant_coefficients har riktig lengde etter filtrering
-    print("Lengde av relevant_coefficients:")
-    print(length(relevant_coefficients))
-
-    # Prøv på nytt å beregne prediksjoner hvis alt ser riktig ut
-    if (length(relevant_coefficients) > 0 && ncol(numeric_data) == length(relevant_coefficients)) {
-      data_with_area_vars$predicted_slx <- numeric_data %*% relevant_coefficients
-    } else {
-      print("Feil: Mangler felles variabler for prediksjonen.")
-    }
-    ```
-
-    ```{r}
-    # Skriv ut alle kolonnenavn i data_with_area_vars
-    print("Kolonnenavn i data_with_area_vars:")
-    print(colnames(data_with_area_vars))
-
-    # Skriv ut alle navn i slx_coefficients
-    print("Navn i slx_coefficients:")
-    print(names(slx_coefficients))
-    ```
-
-    ```{r}
-    # Fjern prefikset 'lag.' fra navnene i slx_coefficients
-    names(slx_coefficients) <- gsub("^lag\\.", "", names(slx_coefficients))
-
-    # Finn felles variabler mellom slx_coefficients og data_with_area_vars
-    common_vars <- intersect(names(slx_coefficients), colnames(data_with_area_vars))
-
-    # Sjekk at vi har felles variabler
-    if (length(common_vars) > 0) {
-      # Filtrer data og koeffisienter basert på felles variabler
-      numeric_data <- as.matrix(data_with_area_vars[, common_vars])
-      relevant_coefficients <- as.numeric(slx_coefficients[common_vars])
-
-      # Kontroller dimensjoner og utfør multiplikasjonen
-      print(dim(numeric_data))
-      print(length(relevant_coefficients))
-      data_with_area_vars$predicted_slx <- numeric_data %*% relevant_coefficients
-    } else {
-      print("Feil: Mangler felles variabler for prediksjonen.")
-    }
-    ```
-
-    ```{r}
-    # Begrens numeric_vars til variablene som også finnes i relevant_coefficients
-    numeric_vars <- intersect(numeric_vars, names(relevant_coefficients))
-
-    # Ekstraher bare de numeriske kolonnene som matcher relevant_coefficients
-    numeric_data <- as.matrix(data_with_area_vars[, numeric_vars])
-
-    # Forsikre oss om at relevant_coefficients er en numerisk vektor
-    relevant_coefficients <- as.numeric(relevant_coefficients[numeric_vars])
-
-    # Sjekk dimensjoner og utfør multiplikasjonen
-    print(dim(numeric_data))
-    print(length(relevant_coefficients))
-
-    # Beregn prediksjoner manuelt basert på felles variabler
-    data_with_area_vars$predicted_slx <- numeric_data %*% relevant_coefficients
-    ```
-
-    ```{r}
-    # Hent koeffisientene fra SLX-modellen
-    slx_coefficients <- coef(SLX)
-
-    # Identifiser variablene som finnes både i data og i SLX-koeffisientene, og sjekk at de er numeriske
-    common_vars <- intersect(names(slx_coefficients), colnames(data_with_area_vars))
-    numeric_vars <- common_vars[sapply(data_with_area_vars[common_vars], is.numeric)]
-
-    # Ekstraher bare de numeriske kolonnene og konverter til en numerisk matrise
-    numeric_data <- as.matrix(data_with_area_vars[, numeric_vars])
-
-    # Beregn prediksjoner manuelt
-    data_with_area_vars$predicted_slx <- numeric_data %*% slx_coefficients[numeric_vars]
-    ```
-
-    *Selv om jeg ikke fikk til å illustrere grafisk denne modellen diskuteres her resultatene fra 6.0:*
-
-    Moran-plottet for SLX-residualene viser en forbedring i forhold til OLS, men modellen klarer ikke å redusere romlig autokorrelasjon i like stor grad som SDEM og SEM.
-    Det er fortsatt synlig clustering av residualene, noe som indikerer at SLX ikke fullt ut adresserer romlige avhengigheter.
-    Den stigende linjen i plottet viser at det fortsatt er romlige strukturer i residualene, og dermed er SLX-modellen mindre effektiv i å håndtere disse.
-
-    Når vi sammenligner SLX med SDEM, er SLX-modellen en forbedring over OLS, men den flate linjen i Moran-plottet for SLX er ikke like tydelig som i SDEM-plottet.
-    Dette indikerer at selv om SLX bidrar til å redusere romlige avhengigheter, er den ikke i stand til å fjerne dem helt.
-
-    ***Her prøver jeg å illustrere SDEM men får det ikke til.....***
-
-    ```{r}
-    # Sjekk at SDEM er tilgjengelig og at riktig vektingsliste brukes
-    if(exists("SDEM") && exists("lw3")) {
-        predicted_sdem <- predict(SDEM, newdata = data_with_area_vars, listw = lw3)
-        data_with_area_vars$predicted_sdem <- predicted_sdem
-    } else {
-        stop("Sørg for at både SDEM-modellen og lw3 er riktig definert.")
-    }
-    ```
-
-    ```{r}
-
-    # Plot som viser faktiske priser og SDEM prediksjoner
-    ggplot(data_with_area_vars, aes(x = sqft_living)) +
-        geom_point(aes(y = price), alpha = 0.5, color = "gray") +  # Viser faktiske priser
-        geom_line(aes(y = predicted_sdem, color = "SDEM Model"), linewidth = 1) +  # Viser SDEM prediksjoner
-        labs(title = "Effekt av sqft_living på pris i SDEM-modellen",
-             x = "Boligstørrelse (sqft)", y = "Pris") +
-        scale_color_manual(values = c("SDEM Model" = "red")) +  # Endre fargen for SDEM linjen til rød
-        theme_minimal()  # Bruker et minimalistisk tema for plottet
-    ```
-
-    ```{r}
-    # Generer prediksjoner fra SDEM-modellen
-    if (exists("SDEM")) {
-      tryCatch({
-        predicted_sdem <- predict(SDEM, newdata = data_with_area_vars, listw = lw3)
-        data_with_area_vars$predicted_sdem <- predicted_sdem
-      }, error = function(e) {
-        print(paste("En feil oppstod: ", e$message))
-      })
-    } else {
-      stop("SDEM-modellen er ikke definert.")
-    }
-
-    # Plot for å vise faktisk pris og predikert pris fra SDEM-modellen mot 'sqft_living'
-    library(ggplot2)
-
-    if (exists("predicted_sdem")) {
-      ggplot(data_with_area_vars, aes(x = sqft_living, y = price)) +
-        geom_point(aes(color = "Faktisk Data"), alpha = 0.5) +
-        geom_line(aes(y = predicted_sdem, color = "SDEM Modell"), linewidth = 1) +
-        labs(title = "Effekt av boligstørrelse (sqft_living) på pris i SDEM-modellen",
-             x = "Boligstørrelse (sqft)", y = "Pris") +
-        scale_color_manual(values = c("Faktisk Data" = "gray", "SDEM Modell" = "red")) +
-        theme_minimal()
-    } else {
-      print("Prediksjoner fra SDEM-modellen er ikke tilgjengelig.")
-    }
-    ```
-
-    ```{r}
-    # Ekstraher koeffisientene fra SDEM-modellen
-    sdem_coefficients <- coef(SDEM)
-
-    # Identifiser variablene som finnes både i data og i SDEM-koeffisientene, og sjekk at de er numeriske
-    common_vars <- intersect(names(sdem_coefficients), colnames(data_with_area_vars))
-    numeric_vars <- common_vars[sapply(data_with_area_vars[common_vars], is.numeric)]
-
-    # Ekstraher bare de numeriske kolonnene og konverter til en numerisk matrise
-    numeric_data <- as.matrix(data_with_area_vars[, numeric_vars])
-
-    # Forsikre oss om at `sdem_coefficients` også er en numerisk vektor med riktig dimensjon
-    relevant_coefficients <- as.numeric(sdem_coefficients[numeric_vars])
-
-    # Sjekk dimensjoner og utfør multiplikasjonen
-    print(dim(numeric_data))
-    print(length(relevant_coefficients))
-
-    # Beregn prediksjoner manuelt basert på felles variabler
-    data_with_area_vars$predicted_sdem <- numeric_data %*% relevant_coefficients
-
-    # Plot for å vise faktisk pris og predikert pris fra SDEM-modellen mot 'sqft_living'
-    library(ggplot2)
-
-    ggplot(data_with_area_vars, aes(x = sqft_living, y = price)) +
-      geom_point(aes(color = "Faktisk Data"), alpha = 0.5) +
-      geom_line(aes(y = predicted_sdem, color = "SDEM Modell"), linewidth = 1) +
-      labs(title = "Effekt av boligstørrelse (sqft_living) på pris i SDEM-modellen",
-           x = "Boligstørrelse (sqft)", y = "Pris") +
-      scale_color_manual(values = c("Faktisk Data" = "gray", "SDEM Modell" = "red")) +
-      theme_minimal()
-    ```
-
-    ```{r}
-    # Hent koeffisientene fra SDEM-modellen
-    sdem_coefficients <- coef(SDEM)
-
-    # Identifiser variablene som finnes både i data og i SDEM-koeffisientene
-    common_vars <- intersect(names(sdem_coefficients), colnames(data_with_area_vars))
-
-    # Ekstraher de numeriske kolonnene som matcher relevante koeffisienter
-    numeric_vars <- common_vars[sapply(data_with_area_vars[common_vars], is.numeric)]
-    numeric_data <- as.matrix(data_with_area_vars[, numeric_vars])
-
-    # Forsikre oss om at 'sdem_coefficients' også er en numerisk vektor med riktig dimensjon
-    relevant_coefficients <- as.numeric(sdem_coefficients[numeric_vars])
-
-    # Sjekk dimensjoner
-    print(dim(numeric_data))  # Dimensjon av numeric_data
-    print(length(relevant_coefficients))  # Lengden på relevante koeffisienter
-    print("Variabler i numeric_data:")
-    print(numeric_vars)
-    print("Relevante koeffisienter:")
-    print(names(relevant_coefficients))
-
-    # Beregn prediksjoner manuelt
-    if (ncol(numeric_data) == length(relevant_coefficients)) {
-        data_with_area_vars$predicted_sdem <- numeric_data %*% relevant_coefficients
-    } else {
-        stop("Dimensjonene til numeric_data og relevant_coefficients stemmer ikke overens.")
-    }
-    ```
-
-    *Selv om jeg ikke fikk til å illustrere grafisk denne modellen diskuteres her resultatene fra 6.0:*
-
-    Moran-plottet for SDEM-residualene indikerer en betydelig reduksjon i romlig autokorrelasjon sammenlignet med OLS-modellen.
-    Residualene er mer spredt, og clustering er mindre tydelig.
-    Dette tyder på at SDEM-modellen effektivt har fanget opp både direkte og indirekte romlige effekter, noe som er essensielt for å håndtere de romlige avhengighetene som er til stede i boligprisdataene.
-    Den flate linjen i plottet bekrefter at romlig autokorrelasjon er minimert, og at modellen gir mer pålitelige estimater for boligpriser.
-
-    Den kvantitative analysen, inkludert AIC og log-likelihood, viser at SDEM gir en forbedring i modelltilpasningen sammenlignet med OLS, men ikke nødvendigvis i like stor grad som SEM.
-    SDEM-modellen er fortsatt en god tilnærming for å håndtere romlige effekter, men SEM kan fremstå som den beste modellen i denne sammenhengen.
-
--   **Diskusjon av de estimerte koeffisientene for hver modell**
-
-    For hver modell tolker vi to utvalgte koeffisienter (f.eks., sqft_living og andel_hvit_alene) og diskuterer deres økonomiske betydning, signifikans og rimelighet.
-
-    **1. OLS-modellen**
-
-    Koeffisient for\*\* sqft_living: Den positive koeffisienten indikerer at større boliger er assosiert med høyere priser.
-
-    Dette er rimelig, ettersom boligkjøpere vanligvis verdsetter større areal.
-    Signifikansen av denne koeffisienten bekrefter at boligstørrelse er en viktig faktor.
-
-    Koeffisient for\*\* andel_hvit_alene: En positiv eller negativ koeffisient her kan indikere preferanser basert på nabolagssammensetning.
-
-    Hvis koeffisienten er signifikant, kan det tyde på at demografiske faktorer har en økonomisk betydning i boligmarkedet.
-
-    **2. SEM-modellen (Spatial Error Model)**
-
-    Koeffisient for\*\* sqft_living: SEM-modellen reduserer spatial autokorrelasjon i residualene, noe som gir en renere effekt av boligstørrelsen på pris.
-
-    Koeffisienten forblir positiv, noe som fortsatt indikerer at større boliger gir høyere priser.
-
-    Koeffisient for\*\* andel_hvit_alene: Den spatialt justerte modellen tar høyde for romlige feilkorrelasjoner, noe som kan gi et mer pålitelig estimat for demografiske preferanser og redusere skjevheter fra naboområder.
-
-    **3. SAR-modellen (Spatial Lag Model)**
-
-    For SAR-modellen må vi bruke **direkte og indirekte impacts** for å tolke effekten av variablene, da disse gir oss en mer fullstendig forståelse av både lokale og globale effekter.
-
-    Direkte impact for\*\* sqft_living: Direkte effekten viser hvordan en økning i boligstørrelsen påvirker prisen i samme område.
-
-    Den positive direkte effekten betyr at større boliger gir høyere priser, selv etter å ha tatt hensyn til naboers priser.
-
-    Indirekte impact for\*\* andel_hvit_alene: Den indirekte effekten indikerer hvordan sammensetningen i ett nabolag påvirker prisene i omkringliggende områder.
-
-    Hvis andel_hvit_alene har en signifikant indirekte effekt, betyr det at demografiske faktorer i ett område påvirker boligpriser i nærliggende områder også.
-
-    **4. SLX-modellen (Spatial Lag of X)**
-
-    **Koeffisient for** sqft_living: I SLX-modellen ser vi kun på effekten av laggede uavhengige variabler, og sqft_living har en positiv koeffisient, noe som betyr at prisene påvirkes direkte av boligens størrelse, og dette er romlig avhengig av naboenes boligstørrelse.
-
-    **Koeffisient for** andel_hvit_alene: Denne koeffisienten kan fange opp naboers demografiske påvirkning på boligprisen i en gitt bolig.
-
-    Hvis signifikant, betyr det at nabolagssammensetningen har en økonomisk innvirkning, også i forhold til nærliggende nabolag.
-
-    **5. SDEM-modellen (Spatial Durbin Error Model)**
-
-    **Direkte effekt for** sqft_living: Den positive direkte effekten for sqft_living antyder at større boliger har høyere priser, selv etter å ha kontrollert for spatial feilavhengighet og effekten av nabolagsegenskaper.
-
-    I**ndirekte effekt for** andel_hvit_alene: Den indirekte effekten viser hvordan nabolagskomposisjonen påvirker omkringliggende boligpriser.
-
-    Hvis signifikant, indikerer dette at demografiske faktorer ikke bare påvirker lokalt, men også har en viss spillover-effekt til andre nærliggende områder.
-
-    **Konklusjon**
-
-    Den hedoniske boligprismodellen viser oss hvordan boligkjøpere verdsetter ulike boligelementer, og ved å bruke romlige modeller som SAR, SEM, SLX og SDEM får vi bedre innsikt i de økonomiske effektene av både lokale og globale romlige forhold.
-    Generelt viser analysene at boligens areal (sqft_living) konsekvent er positivt korrelert med pris, mens demografiske variabler som andel_hvit_alene kan ha både direkte og indirekte effekter avhengig av modellvalg.
-    Den romlige modellen med de beste residualene (SDEM) ser ut til å gi den mest pålitelige vurderingen av de økonomiske effektene for både lokale og nabopåvirkninger.
 
 # **8.0 Konklusjon**
 

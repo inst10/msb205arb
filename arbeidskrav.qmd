@@ -783,8 +783,7 @@ print(lm_tests3)
 
 ```
 
-Kommentar:
-**OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
+Kommentar: **OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
 Residualene fra OLS-modellen viser klare tegn på romlig autokorrelasjon, og dette betyr at en modell som tar hensyn til disse effektene vil være mer hensiktsmessig.
 
 **Spatial Error Model (SEM)**: Teststatistikken for RSerr og adjRSerr er høy, og begge testene er svært signifikante.
@@ -1011,10 +1010,7 @@ Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke h
 
 **Økonomisk tolkning av den hedoniske boligprismodellen**
 
--   Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
-    Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper.
-    I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene.
-    For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
+-   Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper. Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper. I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene. For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
 
 # **8.0 Konklusjon**
 

@@ -783,8 +783,7 @@ print(lm_tests3)
 
 ```
 
-Kommentar:
-**OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
+Kommentar: **OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
 Residualene fra OLS-modellen viser klare tegn på romlig autokorrelasjon, og dette betyr at en modell som tar hensyn til disse effektene vil være mer hensiktsmessig.
 
 **Spatial Error Model (SEM)**: Teststatistikken for RSerr og adjRSerr er høy, og begge testene er svært signifikante.
@@ -896,12 +895,50 @@ SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 ```{r}
 #| echo: false
 #| output: false
-# SLX-modell (Spatial Lag of X)
-SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
-                andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
-                andel_andre_alene + andel_blandet, 
-                data = data_with_area_vars, listw = lw3, type = "SLX")
+summary(SLX)
 ```
+
+###  6.3.4 SAR 
+
+```{r}
+# Estimer SAR-modellen med vektmatrisen for k = 3 nærmeste naboer
+sar_model_k3 <- lagsarlm(
+  formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
+    andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + andel_andre_alene + andel_blandet,
+  data = data_with_area_vars,
+  listw = lw3,
+  method = "eigen"
+)
+
+# Estimer SAR-modellen med vektmatrisen for k = 10 nærmeste naboer
+sar_model_k10 <- lagsarlm(
+  formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
+    andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + andel_andre_alene + andel_blandet,
+  data = data_with_area_vars,
+  listw = lw10,
+  method = "eigen"
+)
+```
+
+```{r}
+# Se resultatene fra SAR-modellen for k = 3
+summary(sar_model_k3)
+
+# Se resultatene fra SAR-modellen for k = 10
+summary(sar_model_k10)
+```
+
+```{r}
+effects_k3 <- impacts(sar_model_k3, listw = lw3)
+effects_k10 <- impacts(sar_model_k10, listw = lw10)
+```
+
+```{r}
+print(effects_k3)
+print(effects_k10)
+```
+
+Ved å bruke impacts()-funksjonen på SAR-modellen kan vi få nøyaktige tall for både direkte, indirekte og totale effekter, som gir en mer detaljert økonomisk tolkning av hvordan uklie atributter påvirker boligprisene i et romlig perspektiv.
 
 ### 6.3.4 Testing og sammenligning av de ulike modellene
 
@@ -1007,14 +1044,71 @@ Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon bes
 # **7.0 Diskusjon av resultatene**
 
 For denne diskusjonen vil vi fokusere på den hedoniske boligprismodellen, som er en metode for å estimere implisitte priser på boligens egenskaper, slik som størrelse, beliggenhet og sosioøkonomiske faktorer.
-Hver modell (OLS, SEM, SAR (?), SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.
+Hver modell (OLS, SEM, SAR, SLX og SDEM) har blitt brukt for å undersøke hvordan disse egenskapene påvirker boligprisene, og gir oss innsikt i ulike aspekter av romlige avhengigheter.
 
-**Økonomisk tolkning av den hedoniske boligprismodellen**
+**Økonomisk tolkning av den hedoniske boligprismodellen:**
 
--   Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
-    Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper.
-    I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene.
-    For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
+Den hedoniske modellen antar at boligens pris er et resultat av dens unike egenskaper.
+Modellen dekomponerer prisen slik at vi kan se hvor mye av prisen som skyldes spesifikke attributter, som antall soverom, boligstørrelse, og lokalsamfunnets egenskaper.
+I en hedonisk boligprismodell betyr koeffisientene de implisitte prisene på de enkelte egenskapene.
+For eksempel vil en positiv koeffisient for “sqft_living” indikere at større boliger, alt annet likt, er forbundet med høyere priser.
+
+**I OLS-modellen kan vi tolke to utvalgte koeffisienter med tanke på den hedoniske teorien:**
+
+1.  Koeffisient forbedrooms: Denne koeffisienten viser hvordan antall soverom påvirker boligprisen. Et negativt estimat indikerer at flere soverom faktisk kan redusere boligprisen når andre faktorer holdes konstant, noe som kan tolkes som at større boligareal (representert ved andre variabler som sqft_living) er viktigere enn antall soverom i å forklare prisøkning.
+
+2.  Koeffisient forsqft_living: Dette måler effekten av boareal på prisen og har en positiv koeffisient, som forventet. Økt boareal fører til en økning i pris, noe som er i tråd med den hedoniske teorien om at større boliger har høyere verdi på grunn av økt funksjonalitet og komfort.
+
+**I SDEM-modellen kan vi tolke to utvalgte koeffisienter med tanke på den hedoniske teorien:**
+
+1.  Koeffisient for sqft_living (boareal):
+
+-   Direkte effekt: Den positive og signifikante direkte effekten (p-verdi \< 2.22e-16) indikerer at økt boareal innenfor enheten gir en økning i boligprisen. Dette stemmer godt med den hedoniske teorien, som sier at større boliger har høyere verdi.
+-   Indirekte effekt: Den positive og signifikante indirekte effekten antyder også at boareal i naboområder påvirker boligprisen, noe som kan indikere en viss “nabolagseffekt” der større boliger i nærheten øker den generelle prisnivået i området.
+
+2.  Koeffisient for bedrooms (antall soverom):
+
+-   Direkte effekt: Den negative og signifikante direkte effekten (p-verdi 7.76e-13) antyder at et høyere antall soverom, når andre faktorer holdes konstant, kan redusere boligprisen. Dette kan tolkes som at boareal er viktigere enn antall rom i å bestemme verdien.
+-   Indirekte effekt: Den indirekte effekten er også negativ og signifikant (p-verdi 0.003009), noe som betyr at flere soverom i nærområdet kan ha en negativ effekt på boligprisen, kanskje på grunn av preferanser for å unngå områder med mange små, trange boliger.
+
+**I SEM (Spatial Error Model) kan vi tolke to utvalgte koeffisienter med tanke på den hedoniske teorien:**
+
+1.  Koeffisient for sqft_living (boareal):
+
+-   Den positive og svært signifikante koeffisienten (p-verdi \< 2.2e-16) indikerer at økt boareal er assosiert med høyere boligpris. Dette er i samsvar med den hedoniske teorien, som sier at større boareal gir økt verdi fordi det gir mer funksjonalitet og komfort.
+
+2.  Koeffisient for bedrooms (antall soverom):
+
+-   Den negative og signifikante koeffisienten (p-verdi 1.012e-10) antyder at flere soverom, når andre faktorer som boareal holdes konstant, kan redusere boligprisen. Dette kan indikere at boligkjøpere verdsetter boareal mer enn antall rom, som antyder at prisøkning er mer knyttet til den totale størrelsen enn rominndelingen.
+
+**I SLX (Spatial Lag of X) modellen kan vi tolke to utvalgte koeffisienter med tanke på den hedoniske teorien:**
+
+1.  Koeffisient for sqft_living (boareal):
+
+-   Den direkte koeffisienten for sqft_living er positiv og svært signifikant (p-verdi \< 2.2e-16), noe som viser at større boareal øker boligprisen, i tråd med hedonisk teori. Den positive effekten bekrefter at boligkjøpere verdsetter større boareal.
+-   Den romlige effekten (lagged sqft_living) er også negativ og signifikant (p-verdi 6.383e-09), noe som kan tyde på at økt boareal i nærområdet har en negativ effekt på boligprisen for en gitt bolig, noe som potensielt reflekterer økt konkurranse eller metning i markedet.
+
+2.  Koeffisient for bedrooms (antall soverom):
+
+-   Den direkte effekten for bedrooms er negativ og signifikant (p-verdi 2.787e-13), noe som indikerer at flere soverom kan redusere verdien når andre faktorer som boareal holdes konstant. Dette er i tråd med funn i tidligere modeller som antyder at boligkjøpere vektlegger total størrelse mer enn antall rom.
+-   Den romlige effekten (lag.bedrooms) er negativ, men ikke signifikant, noe som betyr at antall soverom i nærområdet ikke har en statistisk signifikant effekt på boligprisen.
+
+**Ut fra resultatene for SAR-modellen kan vi tolke de implisitte prisene for to utvalgte variabler. Vi tar for oss variablene sqft_living (boareal) og bedrooms (antall soverom).**
+
+1.  sqft_living (boareal):
+
+-    Den direkte effekten for sqft_living er positiv (ca. 273–276), noe som betyr at en økning i boareal i en enkelt bolig gir en positiv innvirkning på prisen til denne boligen. Denne effekten er i samsvar med hedonisk teori, som tilsier at større boareal gjør boligen mer verdifull og dermed øker prisen.
+-   Den indirekte effekten er også positiv (ca. 114–194), noe som indikerer at økning i boareal i nærliggende boliger også har en positiv påvirkning på prisen til en gitt bolig. Dette kan skyldes at større boliger i et område gjør hele området mer attraktivt, noe som gjenspeiles i høyere priser generelt.
+-   Den totale effekten (ca. 470–688) viser den samlede virkningen av både direkte og indirekte effekter, og den høye verdien bekrefter at boareal er en svært verdifull faktor i prissettingen av boliger.
+
+2.
+bedrooms (antall soverom):
+
+-    Den direkte effekten for bedrooms er negativ (ca. -43,000 til -45,000), som betyr at et høyere antall soverom, når andre faktorer holdes konstant, kan redusere boligprisen. Dette kan tolkes som at boligkjøpere i dette markedet prioriterer boareal over antall rom, og at de kanskje foretrekker større, åpne områder fremfor flere rom.
+
+-    Den indirekte effekten er også negativ (ca. -29,000 til -65,000), noe som antyder at flere soverom i nærliggende boliger har en negativ påvirkning på prisen til en gitt bolig. Dette kan skyldes at mange små rom i nærområdet kan indikere mindre attraktive boligtyper, som kanskje oppfattes som mindre verdifulle.
+
+-   Den totale effekten (ca. -72,000 til -109,000) reflekterer den samlede negative virkningen av både direkte og indirekte effekter, noe som understreker at antall soverom har en mindre positiv rolle i boligprissetting sammenlignet med boareal.
 
 # **8.0 Konklusjon**
 
@@ -1026,12 +1120,4 @@ SEM og SDEM-modellene er mer effektive i å fange opp og redusere romlige effekt
 Selv om SLX-modellen viser en viss forbedring, er den ikke like effektiv som SEM og SDEM.
 
 Evalueringen av modellene gjennom AIC og log-likelihood indikerer at SLX gir en god balanse mellom tilpasning og kompleksitet, men både SEM og SDEM gir betydelige forbedringer sammenlignet med OLS.
-Samlet sett understreker analysen viktigheten av å bruke romlige modeller for å oppnå mer nøyaktige og pålitelige estimater i boligmarkedet, noe som er avgjørende for informerte beslutninger og effektiv politikk.
-
-# 
-
-❗️Oversikt ❗️
-
--   Refere til modellene
-
--   Finne relevante kilder (eventuelt bare hennvise til de kildene Arnstein bruker i oppgaveteksten)
+Samlet sett understreker analysen viktigheten av å bruke romlige modeller for å oppnå mer nøyaktige og pålitelige estimater i boligmarkedet, noe som er avgjørende for informerte beslutninger og effektiv politikk."

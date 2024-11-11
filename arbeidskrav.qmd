@@ -732,7 +732,17 @@ print(moran_test_ols_k10)
 
 ```
 
-Tolkning av resultatene fra lm.morans testene!
+Resultatene fra Moran’s I-testen indikerer at det er en signifikant romlig autokorrelasjon i residualene fra regresjonsmodellen.
+For Moran’s I med lw3 fikk vi en observert Moran I-verdi på 0.442 med en standard deviasjon på 25.384 og en p-verdi på mindre enn 2.2e-16.
+For Moran’s I med lw10 var den observerte Moran I-verdien 0.390 med en standard deviasjon på 40.616 og en p-verdi på mindre enn 2.2e-16.
+Begge testene gir svært lave p-verdier, noe som betyr at vi kan forkaste nullhypotesen om ingen romlig autokorrelasjon i residualene.
+
+Moran’s I-verdiene for både lw3 og lw10 er positive og signifikante, noe som indikerer at residualene fra modellen er spatialt korrelerte, altså at det er en tendens til at områder med like restverdier (høye eller lave) grupperer seg sammen i rommet.
+Dette betyr at det er spatial avhengighet som modellen ikke har klart å fange opp.
+Den romlige korrelasjonen er noe sterkere for lw3 (nærmeste tre naboer) sammenlignet med lw10 (nærmeste ti naboer), noe som tyder på at den spatial korrelasjonen kan være mer lokal i naturen.
+
+Dette funnet indikerer at modellen ikke tilstrekkelig fanger opp alle de romlige forholdene som påvirker boligprisene.
+For å håndtere denne romlige autokorrelasjonen bør det vurderes å bruke romlige regresjonsmodeller, som Spatial Lag Model (SLM) eller Spatial Error Model (SEM), som tar hensyn til den romlige avhengigheten.
 
 ```{r}
 # Visualiser Moran Plot for OLS-residualene
@@ -741,7 +751,20 @@ moran.plot(residuals_ols, listw = lw10, main = "Moran Plot for OLS Residualer (k
 
 ```
 
-Tolkning av plottene!
+Moran-plottene for OLS-residualene (k = 3 og k = 10) gir en visuell representasjon av romlig autokorrelasjon i modellens residualer.
+Moran-plottene viser forholdet mellom residualene (x-aksen) og de spatialt forsinkede residualene (y-aksen), og gjør det mulig å vurdere om det finnes systematiske romlige mønstre.
+
+**Moran-Plot for k = 3:**
+
+Moran-plottet for k = 3 indikerer en positiv romlig autokorrelasjon.
+Vi kan se at flere datapunkter ligger i kvadrantene som representerer lav-lav og høy-høy, noe som betyr at områder med høye restverdier tenderer til å være nær andre områder med høye restverdier, og tilsvarende for lave verdier.
+Den stigende trenden i plottet bekrefter også at det er en klar sammenheng mellom restverdiene og deres spatialt forsinkede motparter.
+
+**Moran-Plot for k = 10:**
+
+Moran-plottet for k = 10 viser en lignende trend som for k = 3, men sammenhengen ser noe svakere ut.
+Dette skyldes sannsynligvis at k = 10 inkluderer flere naboer, noe som utjevner den lokale romlige korrelasjonen.
+Den stigende linjen indikerer fortsatt at det er en positiv romlig autokorrelasjon, men denne effekten blir noe mindre markant når flere naboer inkluderes.
 
 ## 6.2 Anselin
 
@@ -760,6 +783,24 @@ print(lm_tests3)
 
 ```
 
+Kommentar:
+**OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
+Residualene fra OLS-modellen viser klare tegn på romlig autokorrelasjon, og dette betyr at en modell som tar hensyn til disse effektene vil være mer hensiktsmessig.
+
+**Spatial Error Model (SEM)**: Teststatistikken for RSerr og adjRSerr er høy, og begge testene er svært signifikante.
+Dette tyder på at romlig avhengighet primært eksisterer i errorleddene, noe som gjør SEM til en god kandidat for videre modellering.
+
+**Spatial Lag Model (SAR)**: Teststatistikken for RSlag og adjRSlag er også høy og signifikant, noe som indikerer at romlig avhengighet også finnes i selve avhengighetsforholdene i modellen.
+SAR-modellen vil derfor kunne være en god modell for å fange opp disse effektene.
+
+**Anbefaling:**
+
+Gitt resultatene fra Lagrange multiplikator-testene, synes både **SEM** og **SAR** å være aktuelle modeller for å håndtere de romlige avhengighetene.
+Valget mellom de to modellene avhenger av hvilken type romlig avhengighet som antas å være mest relevant:
+
+-   Hvis romlig avhengighet antas å påvirke feilleddene, er **SEM** den beste modellen.
+-   Hvis romlig avhengighet antas å være i den avhengige variabelens forhold til de forklarende variablene, vil **SAR** være mer hensiktsmessig.
+
 ```{r}
 #| echo: false
 # Lagrange Multiplikator tester med k = 10
@@ -768,43 +809,25 @@ print("Lagrange Multiplikator-tester med k=10")
 print(lm_tests10)
 ```
 
-### ? SAR - modell .... ?
+Kommentar:
 
-Bare midlertidig overskrift for å huska denna koden.....
+**OLS-modellen**: Gitt de svært signifikante p-verdiene fra alle testene, ser vi at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene.
+Residualene fra OLS-modellen viser tydelige tegn på romlig autokorrelasjon, noe som gjør at en annen modell er nødvendig.
 
-*Detta sto i oppgaveteksten: "Vi vil også benytte Anselin ([1988](https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988)) angrepsmåte (SAR, SEM og lm (OLS))) med Lagrange Multiplier Tests (gjøres enkelt vha. `lm.LMtests(vår_lm, listw = vår_w, test="all")` fra pakken `spdep`. **Vi vil også estimere en SLM (SAR) modell og finne impacts for denne."*** \<- Pørvde på dette her:
+**Spatial Error Model (SEM)**: RSerr og adjRSerr har de høyeste teststatistikkene og svært signifikante p-verdier.
+Dette tyder på at den romlige avhengigheten hovedsakelig ligger i errorleddene, og at en SEM derfor vil være en passende modell for videre analyse.
 
-```{r}
-# Opprett SAR-modellen
-sar_model <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
-                         andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene +
-                         andel_andre_alene,
-                         data = data_with_area_vars, listw = lw3)
+**Spatial Lag Model (SAR)**: RSlag og adjRSlag viser også signifikante resultater, men teststatistikkene er lavere sammenlignet med SEM.
+Dette kan indikere at selv om det er en romlig avhengighet i den avhengige variabelen, er denne effekten ikke like sterk som den romlige avhengigheten i errorleddene.
+SAR-modellen kan være et alternativ, men SEM virker å være mer relevant basert på testresultatene.
 
-# Bruk OLS-modellen for Lagrange Multiplikator tester
-lm_tests_sar3 <- lm.LMtests(model_ols, lw3, test = "all")
-print("Lagrange Multiplikator-tester for SAR-modellen med k=3:")
-print(lm_tests_sar3)
+**Anbefaling:**
 
-lm_tests_sar10 <- lm.LMtests(model_ols, lw10, test = "all")
-print("Lagrange Multiplikator-tester for SAR-modellen med k=10:")
-print(lm_tests_sar10)
-```
+Basert på resultatene fra Lagrange multiplikator-testene med k = 10, virker **Spatial Error Model (SEM)** å være det beste alternativet for å håndtere de romlige avhengighetene i dataene.
+Teststatistikken for RSerr og adjRSerr er høyere enn for RSlag og adjRSlag, noe som tyder på at romlig avhengighet primært er til stede i errorleddene.
+Dette betyr at en SEM-modell kan gi en bedre modelltilpasning enn SAR.
 
-Resultat:
-
-Basert på resultatene fra Lagrange Multiplikator-testene med både k=3 og k=10 nærmeste naboer, tyder resultatene på at det finnes betydelig spatial avhengighet i dataene.
-Dette fremgår av de ekstremt lave p-verdiene for alle testene (p \< 2.2e-16), noe som betyr at en vanlig OLS-modell ikke fanger opp alle romlige effekter.
-Vi må derfor vurdere en spatial modell som kan håndtere disse romlige avhengighetene bedre.
-
-For begge k-verdier (3 og 10), er både **LM-Error**-testen (RSerr) og **Robust LM-Error**-testen (adjRSerr) signifikante.
-Dette indikerer at en Spatial Error Model (SEM) kan være nødvendig, ettersom denne modellen tar hensyn til spatial avhengighet i feilene.
-Samtidig er **LM-Lagged**-testen (RSlag) og **Robust LM-Lagged**-testen (adjRSlag) også signifikante, noe som antyder at en Spatial Autoregressive Model (SAR) også kunne være egnet.
-
-Imidlertid, når vi sammenligner de robuste testene, har **Robust LM-Error**-testen en høyere teststatistikk enn **Robust LM-Lagged**-testen i begge tilfeller (k=3 og k=10).
-Dette indikerer at **SEM-modellen passer bedre** enn SAR-modellen, ettersom de romlige effektene ser ut til å påvirke feilleddet mer enn den avhengige variabelen direkte.
-
-**Konklusjon**
+**Konklusjon på k=3 og k=10**
 
 Samlet sett peker Lagrange Multiplikator-testene mot at en **Spatial Error Model (SEM)** vil være den mest passende modellen for dette datasettet.
 En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.

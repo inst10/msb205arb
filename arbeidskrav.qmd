@@ -2,6 +2,7 @@
 title: "Romlig analyse av boligpriser i King County"
 format: html
 editor: visual
+bibliography: references.bib
 ---
 
 ```{r}
@@ -768,8 +769,7 @@ Den stigende linjen indikerer fortsatt at det er en positiv romlig autokorrelasj
 
 ## 6.2 Anselin
 
-Bruk Anselin ([1988](https://msb205.netlify.app/assignment/kc_h24/assignment_text_24#ref-Anselin1988)) sin teknikk med Lagrange Multiplikator test vha.
-`lm.LMtests()` og diskuter hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
+Her blir @anselin1988 sin teknikk med Lagrange Multiplikator test brukt og videre diskuteres hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
 
 **Utfører Lagrange Multiplikator-testene**
 
@@ -832,6 +832,8 @@ Samlet sett peker Lagrange Multiplikator-testene mot at en **Spatial Error Model
 En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.
 
 ## 6.3 LeSage
+
+@lesage
 
 **Lokalt eller globalt fenomen?**
 

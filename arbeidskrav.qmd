@@ -26,6 +26,7 @@ library(car)
 library(foreign)
 library(stargazer)
 # For tabeller
+library(kableExtra)
 library(flextable)
 library(modelsummary)
 ```
@@ -692,6 +693,9 @@ data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
 
 Vi har formulert modellen vi ønsker å bruke og har kjørt den som en OLS-modell.
 Vi skal se nærmere på residualene i denne modellen for å avgjøre om vi har uforklarte spatial effects i residualene.
+Under er modellen spesifisert:
+
+$P_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\_living}_i + \beta_4 \cdot \text{sqft\_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{andel\_hvit\_alene}_i + \beta_7 \cdot \text{andel\_svart\_alene}_i + \beta_8 \cdot \text{andel\_asiatisk\_alene}_i + \beta_9 \cdot \text{andel\_andre\_alene}_i + \beta_{10} \cdot \text{andel\_blandet}_i + \epsilon_i$
 
 ```{r}
 #| echo: false
@@ -723,55 +727,63 @@ lw10 <- nb2listw(nb10, style = "W")
 ```
 
 ```{r}
+#| echo: false
+#| label: fig-9
+#| fig-cap: Moran`s I test for k = 3
 # Utfør Moran's I-test
 moran_test_ols_k3 <- lm.morantest(model_ols, lw3) 
-
-moran_test_ols_k10 <- lm.morantest(model_ols, lw10) 
-
 print(moran_test_ols_k3)
-print(moran_test_ols_k10)
+```
 
+```{r}
+#| echo: false
+#| label: fig-10
+#| fig-cap: Moran`s I test for k = 10
+# Utfør Moran's I-test
+moran_test_ols_k10 <- lm.morantest(model_ols, lw10)
+
+print(moran_test_ols_k10)
 ```
 
 Resultatene fra Moran’s I-testen indikerer at det er en signifikant romlig autokorrelasjon i residualene fra regresjonsmodellen.
-For Moran’s I med lw3 fikk vi en observert Moran I-verdi på 0.442 med en standard deviasjon på 25.384 og en p-verdi på mindre enn 2.2e-16.
-For Moran’s I med lw10 var den observerte Moran I-verdien 0.390 med en standard deviasjon på 40.616 og en p-verdi på mindre enn 2.2e-16.
+For Moran’s I med 3 naboer fikk vi en observert Moran I-verdi på 0.442 med ett standardavvik på 25.384 og en p-verdi på mindre enn 2.2e-16.
+For Moran’s I med 10 naboer var den observerte Moran I-verdien 0.390 med ett standardavvik på 40.616 og en p-verdi på mindre enn 2.2e-16.
 Begge testene gir svært lave p-verdier, noe som betyr at vi kan forkaste nullhypotesen om ingen romlig autokorrelasjon i residualene.
 
-Moran’s I-verdiene for både lw3 og lw10 er positive og signifikante, noe som indikerer at residualene fra modellen er spatialt korrelerte, altså at det er en tendens til at områder med like restverdier (høye eller lave) grupperer seg sammen i rommet.
+Moran’s I-verdiene for både 3 og 10 naboer er positive og signifikante, noe som indikerer at residualene fra modellen er spatialt korrelerte.
 Dette betyr at det er spatial avhengighet som modellen ikke har klart å fange opp.
-Den romlige korrelasjonen er noe sterkere for lw3 (nærmeste tre naboer) sammenlignet med lw10 (nærmeste ti naboer), noe som tyder på at den spatial korrelasjonen kan være mer lokal i naturen.
-
-Dette funnet indikerer at modellen ikke tilstrekkelig fanger opp alle de romlige forholdene som påvirker boligprisene.
-For å håndtere denne romlige autokorrelasjonen bør det vurderes å bruke romlige regresjonsmodeller, som Spatial Lag Model (SLM) eller Spatial Error Model (SEM), som tar hensyn til den romlige avhengigheten.
+Den romlige korrelasjonen er noe sterkere for nærmeste 3 naboer sammenlignet med nærmeste 10 naboer, noe som tyder på at den romlige korrelasjonen kan være mer lokal i naturen.
 
 ```{r}
+#| echo: false
+#| label: fig-11
+#| fig-cap: Morans plott for OLS residualer k = 3
 # Visualiser Moran Plot for OLS-residualene
 moran.plot(residuals_ols, listw = lw3, main = "Moran Plot for OLS Residualer (k = 3)")
-moran.plot(residuals_ols, listw = lw10, main = "Moran Plot for OLS Residualer (k = 10)")
-
 ```
 
-Moran-plottene for OLS-residualene (k = 3 og k = 10) gir en visuell representasjon av romlig autokorrelasjon i modellens residualer.
+```{r}
+#| echo: false
+#| label: fig-12
+#| fig-cap: Moran`s plott for OLS residualer k = 10
+moran.plot(residuals_ols, listw = lw10, main = "Moran Plot for OLS Residualer (k = 10)")
+```
+
+Moran-plottene for OLS-residualene gir en visuell representasjon av romlig autokorrelasjon i modellens residualer.
 Moran-plottene viser forholdet mellom residualene (x-aksen) og de spatialt forsinkede residualene (y-aksen), og gjør det mulig å vurdere om det finnes systematiske romlige mønstre.
-
-**Moran-Plot for k = 3:**
-
-Moran-plottet for k = 3 indikerer en positiv romlig autokorrelasjon.
+Moran-plottet for 3 nærmeste naboer indikerer en positiv romlig autokorrelasjon.
 Vi kan se at flere datapunkter ligger i kvadrantene som representerer lav-lav og høy-høy, noe som betyr at områder med høye restverdier tenderer til å være nær andre områder med høye restverdier, og tilsvarende for lave verdier.
 Den stigende trenden i plottet bekrefter også at det er en klar sammenheng mellom restverdiene og deres spatialt forsinkede motparter.
-
-**Moran-Plot for k = 10:**
-
-Moran-plottet for k = 10 viser en lignende trend som for k = 3, men sammenhengen ser noe svakere ut.
+Moran-plottet for 10 nærmeste naboer har en lignende trend som for 3 nærmeste naboer, men sammenhengen ser noe svakere ut.
 Dette skyldes sannsynligvis at k = 10 inkluderer flere naboer, noe som utjevner den lokale romlige korrelasjonen.
 Den stigende linjen indikerer fortsatt at det er en positiv romlig autokorrelasjon, men denne effekten blir noe mindre markant når flere naboer inkluderes.
 
+Funnene fra Morans I testene og plottene indikerer at OLS-modellen ikke er tilstrekkelig i å fange opp alle de romlige forholdene som påvirker boligprisene.
+For å håndtere denne romlige autokorrelasjonen bør det vurderes å bruke romlige regresjonsmodeller, noe vi skal ser nærmere på videre i oppgaven.
+
 ## 6.2 Anselin
 
-Her blir @anselin1988 sin teknikk med Lagrange Multiplikator test brukt og videre diskuteres hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
-
-**Utfører Lagrange Multiplikator-testene**
+Her blir @anselin1988 sin teknikk med Lagrange multiplikator test brukt og videre diskuteres det hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
 
 ```{r}
 #| echo: false
@@ -780,10 +792,11 @@ Her blir @anselin1988 sin teknikk med Lagrange Multiplikator test brukt og vider
 lm_tests3 <- lm.LMtests(model_ols, lw3, test = "all")
 print("Lagrange Multiplikator-tester med k=3")
 print(lm_tests3)
-
 ```
 
-Kommentar: **OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
+### 6.2.1 Langrange multiplikator test for 3 nærmeste naboer (k = 3)
+
+**OLS-modellen**: Basert på de svært signifikante p-verdiene fra alle testene, kan vi konkludere med at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene på en tilfredsstillende måte.
 Residualene fra OLS-modellen viser klare tegn på romlig autokorrelasjon, og dette betyr at en modell som tar hensyn til disse effektene vil være mer hensiktsmessig.
 
 **Spatial Error Model (SEM)**: Teststatistikken for RSerr og adjRSerr er høy, og begge testene er svært signifikante.
@@ -792,13 +805,13 @@ Dette tyder på at romlig avhengighet primært eksisterer i errorleddene, noe so
 **Spatial Lag Model (SAR)**: Teststatistikken for RSlag og adjRSlag er også høy og signifikant, noe som indikerer at romlig avhengighet også finnes i selve avhengighetsforholdene i modellen.
 SAR-modellen vil derfor kunne være en god modell for å fange opp disse effektene.
 
-**Anbefaling:**
-
-Gitt resultatene fra Lagrange multiplikator-testene, synes både **SEM** og **SAR** å være aktuelle modeller for å håndtere de romlige avhengighetene.
+Gitt resultatene fra Lagrange multiplikator-testene, synes både SEM og SAR å være aktuelle modeller for å håndtere de romlige avhengighetene.
 Valget mellom de to modellene avhenger av hvilken type romlig avhengighet som antas å være mest relevant:
 
--   Hvis romlig avhengighet antas å påvirke feilleddene, er **SEM** den beste modellen.
--   Hvis romlig avhengighet antas å være i den avhengige variabelens forhold til de forklarende variablene, vil **SAR** være mer hensiktsmessig.
+-   Hvis romlig avhengighet antas å påvirke feilleddene, er SEM den beste modellen.
+-   Hvis romlig avhengighet antas å være i den avhengige variabelens forhold til de forklarende variablene, vil SAR være mer hensiktsmessig.
+
+### 6.2.2 Langrange multiplikator test for 10 nærmeste naboer (k = 10)
 
 ```{r}
 #| echo: false
@@ -807,8 +820,6 @@ lm_tests10 <- lm.LMtests(model_ols, lw10, test = "all")
 print("Lagrange Multiplikator-tester med k=10")
 print(lm_tests10)
 ```
-
-Kommentar:
 
 **OLS-modellen**: Gitt de svært signifikante p-verdiene fra alle testene, ser vi at OLS-modellen ikke klarer å håndtere romlige avhengigheter i dataene.
 Residualene fra OLS-modellen viser tydelige tegn på romlig autokorrelasjon, noe som gjør at en annen modell er nødvendig.
@@ -820,22 +831,20 @@ Dette tyder på at den romlige avhengigheten hovedsakelig ligger i errorleddene,
 Dette kan indikere at selv om det er en romlig avhengighet i den avhengige variabelen, er denne effekten ikke like sterk som den romlige avhengigheten i errorleddene.
 SAR-modellen kan være et alternativ, men SEM virker å være mer relevant basert på testresultatene.
 
-**Anbefaling:**
-
 Basert på resultatene fra Lagrange multiplikator-testene med k = 10, virker **Spatial Error Model (SEM)** å være det beste alternativet for å håndtere de romlige avhengighetene i dataene.
 Teststatistikken for RSerr og adjRSerr er høyere enn for RSlag og adjRSlag, noe som tyder på at romlig avhengighet primært er til stede i errorleddene.
 Dette betyr at en SEM-modell kan gi en bedre modelltilpasning enn SAR.
 
-**Konklusjon på k=3 og k=10**
+### **6.2.3 Konklusjon**
 
-Samlet sett peker Lagrange Multiplikator-testene mot at en **Spatial Error Model (SEM)** vil være den mest passende modellen for dette datasettet.
+Samlet sett peker Lagrange Multiplikator-testene mot at en Spatial Error Model (SEM) vil være den mest passende modellen for dette datasettet.
 En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å modellere romlige effekter i feilkomponenten, noe som sannsynligvis gir en bedre forståelse og kontroll av romlige mønstre i boligprisene enn en SAR- eller OLS-modell ville ha gjort.
 
 ## 6.3 LeSage
 
-@lesage
+Vi skal nå bruke teknikken med nestede modeller anbefalt av @lesage, før vi tester de nestede modellne ved hjelp av en *likelihood ratio test* for å finne ut hvilken modell som synes å være den beste.
 
-**Lokalt eller globalt fenomen?**
+**6.3.1 Lokalt eller globalt fenomen?**
 
 Siden testene viser betydelig spatial avhengighet på både lokale og større skalaer (k=3 og k=10 nærmeste naboer), og SEM-modellen (Spatial Error Model) er identifisert som den mest passende for å fange opp disse effektene, peker dette tydelig mot et globalt fenomen.
 Med andre ord, de romlige effektene påvirker boligprisene på et bredt geografisk nivå, noe som indikerer at boligprisene i et område ikke bare påvirkes av umiddelbare naboboliger, men av strukturer og forhold som strekker seg over hele regionen.
@@ -844,7 +853,7 @@ SEM-modellen fanger opp den romlige avhengigheten som eksisterer i feilleddet, n
 Dette kan inkludere bredere økonomiske forhold, sosioøkonomiske mønstre, eller infrastrukturelle påvirkninger som fanges opp i feilleddet.
 Det globale aspektet understrekes av det faktum at spatial avhengighet observeres både blant nærmeste naboer og over større avstander (k=10), noe som bekrefter at romlige effekter har en vidstrakt innvirkning på boligmarkedet.
 
-### 6.3.1 SDEM
+### 6.3.2 SDEM
 
 ```{r}
 #| echo: false
@@ -864,7 +873,7 @@ summary(SDEM)
 summary(impacts(SDEM), zstats = TRUE)
 ```
 
-### 6.3.2 SEM
+### 6.3.3 SEM
 
 ```{r}
 #| echo: false
@@ -882,9 +891,10 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
 summary(SEM)
 ```
 
-### 6.3.3 SLX
+### 6.3.4 SLX
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 # SLX-modell (Spatial Lag of X)
@@ -895,12 +905,13 @@ SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
 ```
 
 ```{r}
+#| eval: false
 #| echo: false
 #| output: false
 summary(SLX)
 ```
 
-###  6.3.4 SAR 
+### 6.3.5 SAR
 
 ```{r}
 # Estimer SAR-modellen med vektmatrisen for k = 3 nærmeste naboer
@@ -942,22 +953,20 @@ print(effects_k10)
 
 Ved å bruke impacts()-funksjonen på SAR-modellen kan vi få nøyaktige tall for både direkte, indirekte og totale effekter, som gir en mer detaljert økonomisk tolkning av hvordan uklie atributter påvirker boligprisene i et romlig perspektiv.
 
-### 6.3.4 Testing og sammenligning av de ulike modellene
+### 6.3.6 Testing og sammenligning av de ulike modellene
 
-**Likelihood Ratio Test:**
+**Likelihood Ratio Test**
 
 Denne type test brukes til å sammenligne to modeller for å vurdere om den mer komplekse modellen gir en signifikant forbedring i modelltilpasning.
 I dette tilfellet har alle de romlige modellene (SEM, SDEM og SLX) signifikant lavere AIC og høyere log-likelihood enn OLS-modellen, noe som indikerer at de passer bedre til dataene.
 
-**Sammenligning av modellene:**
+**Sammenligning av modellene**
 
 SEM-modellen (AIC = 51 436) og SLX-modellen (AIC = 51 409) har begge lavere AIC-verdier enn SDEM-modellen (AIC = 51,502).
 AIC er et mål på modellens kvalitet, der lavere verdier indikerer en bedre modell som balanserer god tilpasning og modellkompleksitet.
 
 SLX-modellen har den laveste AIC (51 409), noe som antyder at den gir den beste balansen mellom modelltilpasning og kompleksitet sammenlignet med de andre modellene.
 Log-likelihood er også høyest for SLX-modellen (-25,683.28), som bekrefter at den gir den beste tilpasningen til dataene.
-
-**Konklusjon:**
 
 Basert på AIC, log-likelihood, og likelihood ratio test ser SLX-modellen ut til å være den beste modellen for dette datasettet, siden den har den laveste AIC og høyeste log-likelihood.
 Selv om SEM-modellen også gir en betydelig forbedring i forhold til OLS og SDEM-modellen, indikerer AIC og log-likelihood at SLX-modellen gir den beste balansen mellom tilpasning og kompleksitet.
@@ -966,8 +975,6 @@ Selv om SEM-modellen også gir en betydelig forbedring i forhold til OLS og SDEM
 
 Vi skal se nærmere på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.
 Vi ser kun på modellene for k=10 (10 nærmeste naboer).
-
-**Bergener residualene for modellene:**
 
 ```{r}
 #| echo: false
@@ -985,8 +992,6 @@ residuals_sdem <- residuals(SDEM)
 # Beregn residualene for SLX-modellen
 residuals_slx <- residuals(SLX)
 ```
-
-**Bruker "moran plot" på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.**
 
 ```{r}
 #| eval: false
@@ -1038,8 +1043,6 @@ Det er fortsatt en viss clustering synlig, spesielt i første og tredje kvadrant
 Sammenlignet med OLS er SLX en forbedring, men den flate linjen er ikke like tydelig som i SEM- eller SDEM-plottene.
 Dette indikerer at SLX-modellen er mindre effektiv når det gjelder å fjerne spatial autokorrelasjon i residualene.
 
-**Konklusjon:**
-
 Konklusjonen er at **SEM og SDEM-modellene** fjerner spatial autokorrelasjon best, med SEM som en lett overlegen modell, mens **OLS** sliter mest med å håndtere de romlige effektene.
 **SLX-modellen** klarer å redusere noe av den spatial avhengigheten, men ikke i like stor grad som SEM og SDEM.
 
@@ -1057,9 +1060,11 @@ For eksempel vil en positiv koeffisient for “sqft_living” indikere at størr
 
 **I OLS-modellen kan vi tolke to utvalgte koeffisienter med tanke på den hedoniske teorien:**
 
-1.  Koeffisient forbedrooms: Denne koeffisienten viser hvordan antall soverom påvirker boligprisen. Et negativt estimat indikerer at flere soverom faktisk kan redusere boligprisen når andre faktorer holdes konstant, noe som kan tolkes som at større boligareal (representert ved andre variabler som sqft_living) er viktigere enn antall soverom i å forklare prisøkning.
+1.  Koeffisient forbedrooms: Denne koeffisienten viser hvordan antall soverom påvirker boligprisen.
+    Et negativt estimat indikerer at flere soverom faktisk kan redusere boligprisen når andre faktorer holdes konstant, noe som kan tolkes som at større boligareal (representert ved andre variabler som sqft_living) er viktigere enn antall soverom i å forklare prisøkning.
 
-2.  Koeffisient forsqft_living: Dette måler effekten av boareal på prisen og har en positiv koeffisient, som forventet. Økt boareal fører til en økning i pris, noe som er i tråd med den hedoniske teorien om at større boliger har høyere verdi på grunn av økt funksjonalitet og komfort.
+2.  Koeffisient forsqft_living: Dette måler effekten av boareal på prisen og har en positiv koeffisient, som forventet.
+    Økt boareal fører til en økning i pris, noe som er i tråd med den hedoniske teorien om at større boliger har høyere verdi på grunn av økt funksjonalitet og komfort.
 
 **I SDEM-modellen kan vi tolke to utvalgte koeffisienter med tanke på den hedoniske teorien:**
 
@@ -1099,19 +1104,20 @@ For eksempel vil en positiv koeffisient for “sqft_living” indikere at størr
 
 1.  sqft_living (boareal):
 
--    Den direkte effekten for sqft_living er positiv (ca. 273–276), noe som betyr at en økning i boareal i en enkelt bolig gir en positiv innvirkning på prisen til denne boligen. Denne effekten er i samsvar med hedonisk teori, som tilsier at større boareal gjør boligen mer verdifull og dermed øker prisen.
+-   Den direkte effekten for sqft_living er positiv (ca. 273–276), noe som betyr at en økning i boareal i en enkelt bolig gir en positiv innvirkning på prisen til denne boligen. Denne effekten er i samsvar med hedonisk teori, som tilsier at større boareal gjør boligen mer verdifull og dermed øker prisen.
 -   Den indirekte effekten er også positiv (ca. 114–194), noe som indikerer at økning i boareal i nærliggende boliger også har en positiv påvirkning på prisen til en gitt bolig. Dette kan skyldes at større boliger i et område gjør hele området mer attraktivt, noe som gjenspeiles i høyere priser generelt.
 -   Den totale effekten (ca. 470–688) viser den samlede virkningen av både direkte og indirekte effekter, og den høye verdien bekrefter at boareal er en svært verdifull faktor i prissettingen av boliger.
 
-2.
-bedrooms (antall soverom):
+2.  bedrooms (antall soverom):
 
--    Den direkte effekten for bedrooms er negativ (ca. -43,000 til -45,000), som betyr at et høyere antall soverom, når andre faktorer holdes konstant, kan redusere boligprisen. Dette kan tolkes som at boligkjøpere i dette markedet prioriterer boareal over antall rom, og at de kanskje foretrekker større, åpne områder fremfor flere rom.
+-   Den direkte effekten for bedrooms er negativ (ca. -43,000 til -45,000), som betyr at et høyere antall soverom, når andre faktorer holdes konstant, kan redusere boligprisen.
+    Dette kan tolkes som at boligkjøpere i dette markedet prioriterer boareal over antall rom, og at de kanskje foretrekker større, åpne områder fremfor flere rom.
 
--    Den indirekte effekten er også negativ (ca. -29,000 til -65,000), noe som antyder at flere soverom i nærliggende boliger har en negativ påvirkning på prisen til en gitt bolig. Dette kan skyldes at mange små rom i nærområdet kan indikere mindre attraktive boligtyper, som kanskje oppfattes som mindre verdifulle.
+-   Den indirekte effekten er også negativ (ca. -29,000 til -65,000), noe som antyder at flere soverom i nærliggende boliger har en negativ påvirkning på prisen til en gitt bolig.
+    Dette kan skyldes at mange små rom i nærområdet kan indikere mindre attraktive boligtyper, som kanskje oppfattes som mindre verdifulle.
 
 -   Den totale effekten (ca. -72,000 til -109,000) reflekterer den samlede negative virkningen av både direkte og indirekte effekter, noe som understreker at antall soverom har en mindre positiv rolle i boligprissetting sammenlignet med boareal.
->>>>>>> b15bbbfbdd1ceaf89d651f291d990edbb8a1dadf
+    \>\>\>\>\>\>\> b15bbbfbdd1ceaf89d651f291d990edbb8a1dadf
 
 # **8.0 Konklusjon**
 

@@ -694,6 +694,7 @@ data_with_area_vars <- st_join(data, tracts10_selected, join = st_intersects)
 
 Før vi går over på romlige regresjonsmodeller skal vi presentere modellen vi ønsker å bruke.
 Vi kjører den som en OLS-modell og ser nærmere på residualene for å avgjøre om vi har uforklarte "spatial effects" i residualene.
+Dette gjøres ved hjelp av Moran\`s I tester.
 Følgende modell er spesifisert:
 
 $P_i = \beta_0 + \beta_1 \cdot \text{bedrooms}_i + \beta_2 \cdot \text{bathrooms}_i + \beta_3 \cdot \text{sqft\_living}_i + \beta_4 \cdot \text{sqft\_lot}_i + \beta_5 \cdot \text{floors}_i + \beta_6 \cdot \text{andel\_hvit\_alene}_i + \beta_7 \cdot \text{andel\_svart\_alene}_i + \beta_8 \cdot \text{andel\_asiatisk\_alene}_i + \beta_9 \cdot \text{andel\_andre\_alene}_i + \beta_{10} \cdot \text{andel\_blandet}_i + \epsilon_i$
@@ -730,6 +731,8 @@ lw10 <- nb2listw(nb10, style = "W")
 
 ```{r}
 #| echo: false
+#| label: tbl-5
+#| tbl-cap: "Moran`s I test for 3 nærmeste naboer (k = 3)"
 # Utfør Moran's I-test
 moran_test_ols_k3 <- lm.morantest(model_ols, lw3) 
 print(moran_test_ols_k3)
@@ -737,17 +740,19 @@ print(moran_test_ols_k3)
 
 ```{r}
 #| echo: false
+#| label: tbl-6
+#| tbl-cap: "Moran`s I test for 10 nærmeste naboer (k=10)"
 # Utfør Moran's I-test
 moran_test_ols_k10 <- lm.morantest(model_ols, lw10)
 
 print(moran_test_ols_k10)
 ```
 
-Resultatene fra Moran’s I-testen indikerer at det er en signifikant romlig autokorrelasjon i residualene fra regresjonsmodellen.
+@tbl-5 presenterer resultatene fra Moran\`s I testen for 3 nærmeste naboer, mens @tbl-6 viser resultatene fra Moran’s I-testen for 10 nærmeste naboer.
+Funnene indikerer at det er en signifikant romlig autokorrelasjon i residualene for både 3 og 10 nærmeste naboer.
 For Moran’s I med 3 naboer fikk vi en observert Moran I-verdi på 0.442 med ett standardavvik på 25.384 og en p-verdi på mindre enn 2.2e-16.
 For Moran’s I med 10 naboer var den observerte Moran I-verdien 0.390 med ett standardavvik på 40.616 og en p-verdi på mindre enn 2.2e-16.
 Begge testene gir svært lave p-verdier, noe som betyr at vi kan forkaste nullhypotesen om ingen romlig autokorrelasjon i residualene.
-
 Moran’s I-verdiene for både 3 og 10 naboer er positive og signifikante, noe som indikerer at residualene fra modellen er spatialt korrelerte.
 Dette betyr at det er spatial avhengighet som modellen ikke har klart å fange opp.
 Den romlige korrelasjonen er noe sterkere for nærmeste 3 naboer sammenlignet med nærmeste 10 naboer, noe som tyder på at den romlige korrelasjonen kan være mer lokal i naturen.
@@ -784,14 +789,17 @@ For å håndtere denne romlige autokorrelasjonen bør det vurderes å bruke roml
 Her blir @anselin1988 sin teknikk med Lagrange multiplikator test brukt og videre diskuteres det hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
 Vi undersøker både for 3 og 10 nærmeste naboer.
 
-### 6.2.1 Langrange multiplikator test for 3 nærmeste naboer (k = 3)
+### 6.2.1 Langrange multiplikator test for 3 nærmeste naboer 
+
+@tbl-7 gir en oversikt over lagrange multiplikator testen for 3 nærmeste naboer (k=3).
 
 ```{r}
 #| echo: false
 #| warning: false
+#| label: tbl-7
+#| tbl-cap: "Lagrange Multiplikator-test for k=3"
 # Lagrange Multiplikator tester med k = 3
 lm_tests3 <- lm.LMtests(model_ols, lw3, test = "all")
-print("Lagrange Multiplikator-tester med k=3")
 print(lm_tests3)
 ```
 
@@ -810,14 +818,17 @@ Valget mellom de to modellene avhenger av hvilken type romlig avhengighet som an
 -   Hvis romlig avhengighet antas å påvirke feilleddene, er SEM den beste modellen.
 -   Hvis romlig avhengighet antas å være i den avhengige variabelens forhold til de forklarende variablene, vil SAR være mer hensiktsmessig.
 
-### 6.2.2 Langrange multiplikator test for 10 nærmeste naboer (k = 10)
+### 6.2.2 Langrange multiplikator test for 10 nærmeste naboer
+
+@tbl-8 gir en oversikt over resultatene fra langrange multiplikator test for 10 nærmeste naboer (k=10).
 
 ```{r}
 #| echo: false
 #| warning: false
+#| label: tbl-8
+#| tbl-cap: "Lagrange Multiplikator-test for k=10"
 # Lagrange Multiplikator tester med k = 10
 lm_tests10 <- lm.LMtests(model_ols, lw10, test = "all")
-print("Lagrange Multiplikator-tester med k=10")
 print(lm_tests10)
 ```
 
@@ -844,6 +855,7 @@ En SEM-modell vil kunne håndtere den observerte spatial avhengigheten ved å mo
 
 ```{r}
 #| echo: false
+#| warning: false
 # Estimer SAR-modellen med vektmatrisen for k = 3 nærmeste naboer
 sar_model_k3 <- lagsarlm(
   formula = price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
@@ -863,24 +875,42 @@ sar_model_k10 <- lagsarlm(
 )
 ```
 
+@tbl-9 gir et sammendrag av resultatene fra SAR-modellen med 3 nærmeste naboer.
+
 ```{r}
 #| echo: false
-# Se resultatene fra SAR-modellen for k = 3
+#| label: tbl-9
+#| tbl-cap: "Resultater fra SAR-modellen (k=3)"
 summary(sar_model_k3)
+```
 
+@tbl-10 gir et sammendrag av resultatene for SAR-modellen med 10 nærmeste naboer.
+
+```{r}
+#| echo: false
+#| label: tbl-10
+#| tbl-cap: "Resultater fra SAR-modellen (k=10)"
 # Se resultatene fra SAR-modellen for k = 10
 summary(sar_model_k10)
 ```
 
-```{r}
-#| echo: false
-effects_k3 <- impacts(sar_model_k3, listw = lw3)
-effects_k10 <- impacts(sar_model_k10, listw = lw10)
-```
+@tbl-11 viser impacts for SAR-modellen med 3 nærmeste naboer.
 
 ```{r}
 #| echo: false
+#| label: tbl-11
+#| tbl-cap: "Impacts for SAR-modellen (k=3)"
+effects_k3 <- impacts(sar_model_k3, listw = lw3)
 print(effects_k3)
+```
+
+@tbl-12 viser impacts for SAR-modellen med 10 nærmeste naboer.
+
+```{r}
+#| echo: false
+#| label: tbl-12
+#| tbl-cap: "Impacts for SAR-modellen (k=10)"
+effects_k10 <- impacts(sar_model_k10, listw = lw10)
 print(effects_k10)
 ```
 
@@ -911,17 +941,25 @@ $u=λWu+ϵ$
 ```{r}
 #| echo: false
 #| output: false
+#| warning: false
 SDEM <- errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, Durbin = TRUE)
 ```
 
-```{r}
-#| echo: false
-summary(SDEM)
-```
+@tbl-13 viser resultatene fra SDEM-modellen med 3 nærmeste naboer.
 
 ```{r}
 #| echo: false
-#| output: false
+#| label: tbl-13
+#| tbl-cap: "Resultater fra SDEM-modellen (k=3)"
+summary(SDEM)
+```
+
+@tbl-14 viser impacts for SDEM-modellen med 3 nærmeste naboer.
+
+```{r}
+#| echo: false
+#| label: tbl-14
+#| tbl-cap: "Impacts for SDEM-modellen (k=3)"
 summary(impacts(SDEM), zstats = TRUE)
 ```
 
@@ -930,12 +968,12 @@ summary(impacts(SDEM), zstats = TRUE)
 En Spatial Error Model (SEM) er en romlig regresjonsmodell som fanger opp romlige autokorrelasjoner i feilleddet, i stedet for å inkorporere romlige effekter direkte i de uavhengige variablene.
 Den generelle formen for SEM er:
 
-$y = X \beta + u$
-$u = \lambda Wu +  \epsilon$
+$y = X \beta + u$ $u = \lambda Wu +  \epsilon$
 
 ```{r}
 #| echo: false
 #| output: false
+#| warning: false
 # Spatial Error Model (SEM)
 SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                   andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
@@ -943,9 +981,12 @@ SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors
                   data = data_with_area_vars, listw = lw3)
 ```
 
+@tbl-15 viser resultatene for SEM-modellen med 3 nærmeste naboer.
+
 ```{r}
 #| echo: false
-#| output: false
+#| label: tbl-15
+#| tbl-cap: "Resultater for SEM-modellen (k=3)"
 summary(SEM)
 ```
 
@@ -959,8 +1000,8 @@ $y = X \beta + W X \theta + \epsilon$
 
 ```{r}
 #| echo: false
-#| eval: false
 #| output: false
+#| warning: false
 # SLX-modell (Spatial Lag of X)
 SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                 andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
@@ -968,10 +1009,12 @@ SLX <- lagsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors +
                 data = data_with_area_vars, listw = lw3, type = "SLX")
 ```
 
+@tbl-16 viser resultatene fra SLX-modellen med 3 nærmeste naboer.
+
 ```{r}
 #| echo: false
-#| output: false
-#| eval: false
+#| label: tbl-16
+#| tbl-cap: "Resultater for SLX-modellen (k=3)"
 summary(SLX)
 ```
 
@@ -991,24 +1034,17 @@ Selv om SEM-modellen også gir en betydelig forbedring i forhold til OLS og SDEM
 
 ## 6.4 Fjerner modellene "spatial effects"?
 
-Vi skal se nærmere på residualene fra de ulike modellene for å illustrere hvor godt hver modell fjerner «spatial effects» fra residualene.
-Vi ser kun på modellene for k=10 (10 nærmeste naboer).
+For å evaluere hvor godt de ulike modellene (OLS, SEM, SAR, SDEM og SLX) håndterer "spatial effects" har vi benyttet Moran’s I-plot på residualene fra hver modell med k=10 nærmeste naboer.
+Moran-plottene gir oss innsikt i hvorvidt modellene klarer å fjerne romlige effekter fra residualene og dermed oppnå en modelltilpasning som ikke er påvirket av spatial autokorrelasjon.
 
 ```{r}
 #| echo: false
 #| output: false
-#| eval: false
-
-# Beregn residualene for OLS-modellen
-residuals_ols <- residuals(model_ols)
-
-# Beregn residualene for SEM-modellen
-residuals_sem <- residuals(SEM)
-
 # Beregn residualene for SDEM-modellen
 residuals_sdem <- residuals(SDEM)
 
-# Beregn residualene for SLX-modellen
+# Beregn residualene for SEM-modellen
+residuals_sem <- residuals(SEM)
 
 # Beregn residualene for SLX-modellen
 residuals_slx <- residuals(SLX)
@@ -1016,48 +1052,46 @@ residuals_slx <- residuals(SLX)
 
 ```{r}
 #| echo: false
+#| label: fig-8
+#| fig-cap: "Moran-plot for SDEM-modellen (k=10)"
+moran.plot(residuals_sdem, listw = lw10, main = "Moran's I for SDEM-residualer (k=10)")
+```
 
-# Moran-plot for OLS-modellen
-moran.plot(residuals_ols, listw = lw10, main = "Moran's I for OLS-residualer (k=10)")
-
-# Moran-plot for SEM-modellen
+```{r}
+#| echo: false
+#| label: fig-9
+#| fig-cap: "Moran-plot for SEM-modellen (k=10)"
 moran.plot(residuals_sem, listw = lw10, main = "Moran's I for SEM-residualer (k=10)")
 
+```
 
-# Moran-plot for SDEM-modellen
-moran.plot(residuals_sdem, listw = lw10, main = "Moran's I for SDEM-residualer (k=10)")
-
-# Moran-plot for SLX-modellen
+```{r}
+#| echo: false
+#| label: fig-10
+#| fig-cap: " Moran-plot for SLX-modellen (k=10)"
 moran.plot(residuals_slx, listw = lw10, main = "Moran's I for SLX-residualer (k=10)")
 ```
 
-For å evaluere hvor godt de ulike modellene (OLS, SEM, SAR, SDEM og SLX) håndterer spatial autokorrelasjon i boligprisdataene, har vi benyttet Moran’s I-plot på residualene fra hver modell med k=10 nærmeste naboer.
-Moran-plottene gir oss innsikt i hvorvidt modellene klarer å fjerne romlige effekter fra residualene og dermed oppnå en modelltilpasning som ikke er påvirket av spatial autokorrelasjon.
-
-**OLS-modellen**: Moran-plot for OLS-residualene viser tydelig spatial autokorrelasjon.
-Punktene i plottet er sterkt gruppert, spesielt rundt første og tredje kvadrant, som indikerer positiv romlig korrelasjon mellom residualene.
-Dette antyder at OLS-modellen ikke håndterer den romlige avhengigheten, noe som resulterer i at romlig strukturerte feil fortsatt er til stede.
-Den stigende linjen i plottet bekrefter at det er en romlig sammenheng mellom residualene, som indikerer behov for en modell som kan håndtere denne romlige avhengigheten.
-
 **SEM-modellen (Spatial Error Model)**:
 
-Moran-plot for SEM-residualene viser en klar forbedring sammenlignet med OLS.
+@fig-9 viser Moran-plottet for SEM-residualene.
+Dette plottet viser en klar forbedring sammenlignet med OLS.
 Residualene er mer spredt, og det er mindre tydelig clustering i første og tredje kvadrant.
 Dette indikerer at SEM-modellen har klart å fange opp en stor del av den spatial autokorrelasjonen som var til stede i OLS-modellen.
-
-Den fladere linjen i plottet viser at det er mindre romlig autokorrelasjon igjen i residualene, noe som tyder på at SEM-modellen har vært effektiv i å redusere romlig avhengighet i feilene.
+Den flatere linjen i plottet viser at det er mindre romlig autokorrelasjon igjen i residualene, noe som tyder på at SEM-modellen har vært effektiv i å redusere romlig avhengighet i feilene.
 
 **SDEM-modellen (Spatial Durbin Error Model)**:
 
-Moran-plot for SDEM-residualene viser et lignende mønster som SEM-modellen, med spredte residualer og mindre clustering.
+@fig-8 viser Moran\`s-plottet for SDEM-residualene.
+Dette plottet viser et lignende mønster som SEM-modellen, med spredte residualer og mindre clustering.
 Dette bekrefter at også SDEM-modellen håndterer spatial autokorrelasjon godt, og at den fanger opp både direkte og indirekte romlige effekter.
-
 Linjen i plottet er fortsatt noe stigende, men det er færre ekstreme verdier sammenlignet med OLS.
 SDEM-modellen ser ut til å være minst like effektiv som SEM i å håndtere romlige avhengigheter.
 
 **SLX-modellen (Spatial Lag of X Model)**:
 
-Moran-plot for SLX-residualene viser at modellen klarer å redusere noe av den spatial autokorrelasjonen, men ikke i like stor grad som SEM eller SDEM.
+@fig-10 viser Moran-plott for SLX-residualene.
+Dette plottet viser at modellen klarer å redusere noe av den spatial autokorrelasjonen, men ikke i like stor grad som SEM eller SDEM.
 Det er fortsatt en viss clustering synlig, spesielt i første og tredje kvadrant, noe som tyder på at SLX-modellen ikke fullt ut håndterer romlig avhengighet i dataene.
 Sammenlignet med OLS er SLX en forbedring, men den flate linjen er ikke like tydelig som i SEM- eller SDEM-plottene.
 Dette indikerer at SLX-modellen er mindre effektiv når det gjelder å fjerne spatial autokorrelasjon i residualene.

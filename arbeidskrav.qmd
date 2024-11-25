@@ -1,8 +1,12 @@
 ---
 title: "Romlig analyse av boligpriser i King County"
-format: html
+format: 
+  html: default
+  pdf: 
+    papersize: a4
 editor: visual
 bibliography: references.bib
+author: Hanna, Inrid og Julie
 ---
 
 ```{r}
@@ -789,7 +793,7 @@ For å håndtere denne romlige autokorrelasjonen bør det vurderes å bruke roml
 Her blir @anselin1988 sin teknikk med Lagrange multiplikator test brukt og videre diskuteres det hvilken modell (SAR, SEM eller lm (OLS)) som synes å være den beste.
 Vi undersøker både for 3 og 10 nærmeste naboer.
 
-### 6.2.1 Langrange multiplikator test for 3 nærmeste naboer 
+### 6.2.1 Langrange multiplikator test for 3 nærmeste naboer
 
 @tbl-7 gir en oversikt over lagrange multiplikator testen for 3 nærmeste naboer (k=3).
 
@@ -942,6 +946,8 @@ $u=λWu+ϵ$
 #| echo: false
 #| output: false
 #| warning: false
+#| chache: true
+# ag: setter på cache på denne siden den er nokså tidkrevende
 SDEM <- errorsarlm(model_ols, data = data_with_area_vars, listw = lw3, Durbin = TRUE)
 ```
 
@@ -957,9 +963,10 @@ summary(SDEM)
 @tbl-14 viser impacts for SDEM-modellen med 3 nærmeste naboer.
 
 ```{r}
-#| echo: false
 #| label: tbl-14
 #| tbl-cap: "Impacts for SDEM-modellen (k=3)"
+#| echo: false
+#| cache: true
 summary(impacts(SDEM), zstats = TRUE)
 ```
 
@@ -974,6 +981,7 @@ $y = X \beta + u$ $u = \lambda Wu +  \epsilon$
 #| echo: false
 #| output: false
 #| warning: false
+#| cache: true
 # Spatial Error Model (SEM)
 SEM <- errorsarlm(price ~ bedrooms + bathrooms + sqft_living + sqft_lot + floors + 
                   andel_hvit_alene + andel_svart_alene + andel_asiatisk_alene + 
